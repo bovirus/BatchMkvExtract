@@ -5,7 +5,30 @@
   "list": {
     "delete": "削除"
   },
+  "extract": {
+    "copyCommand": "コマンドをコピー",
+    "extract": "抽出",
+    "commandCopied": "コマンドをクリップボードにコピーしました。",
+    "extractionComplete": "抽出が完了しました。",
+    "noTracks": "トラックが見つかりません。",
+    "header": {
+      "id": "ID",
+      "number": "番号",
+      "type": "種類",
+      "codec": "コーデック",
+      "trackName": "トラック名",
+      "language": "言語"
+    },
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge が使用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",
+      "mkvmergeFailed": "mkvmerge が失敗しました: {{detail}}",
+      "parseError": "mkvmerge の出力を解析できませんでした: {{detail}}",
+      "mkvextractNotAvailable": "mkvextract が使用できません。設定で MKVToolNix のパスを確認してください。{{detail}}",
+      "mkvextractFailed": "mkvextract が失敗しました: {{detail}}"
+    }
+  },
   "toolbar": {
+    "clear": "クリア (Ctrl + Q)",
     "settings": "設定",
     "about": "情報"
   },

@@ -94,6 +94,16 @@ export interface MkvextractStatus {
   mkvToolNixPath: string;
 }
 
+export interface MkvTrack {
+  id: number;
+  number: number;
+  type: string;
+  codec: string;
+  codecId: string;
+  trackName: string;
+  language: string;
+}
+
 export function getDisplayModes(): DisplayMode[] {
   return [DisplayMode.Auto, DisplayMode.Light, DisplayMode.Dark];
 }

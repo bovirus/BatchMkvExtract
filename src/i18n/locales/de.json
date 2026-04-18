@@ -5,7 +5,30 @@
   "list": {
     "delete": "Löschen"
   },
+  "extract": {
+    "copyCommand": "Befehl kopieren",
+    "extract": "Extrahieren",
+    "commandCopied": "Befehl in die Zwischenablage kopiert.",
+    "extractionComplete": "Extraktion abgeschlossen.",
+    "noTracks": "Keine Spuren gefunden.",
+    "header": {
+      "id": "ID",
+      "number": "Nummer",
+      "type": "Typ",
+      "codec": "Codec",
+      "trackName": "Spurname",
+      "language": "Sprache"
+    },
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge ist nicht verfügbar. Bitte MKVToolNix-Pfad in den Einstellungen prüfen. {{detail}}",
+      "mkvmergeFailed": "mkvmerge fehlgeschlagen: {{detail}}",
+      "parseError": "Konnte mkvmerge-Ausgabe nicht auswerten: {{detail}}",
+      "mkvextractNotAvailable": "mkvextract ist nicht verfügbar. Bitte MKVToolNix-Pfad in den Einstellungen prüfen. {{detail}}",
+      "mkvextractFailed": "mkvextract fehlgeschlagen: {{detail}}"
+    }
+  },
   "toolbar": {
+    "clear": "Leeren (Strg + Q)",
     "settings": "Einstellungen",
     "about": "Info"
   },

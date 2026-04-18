@@ -5,7 +5,30 @@
   "list": {
     "delete": "Delete"
   },
+  "extract": {
+    "copyCommand": "Copy Command",
+    "extract": "Extract",
+    "commandCopied": "Command copied to clipboard.",
+    "extractionComplete": "Extraction complete.",
+    "noTracks": "No tracks found.",
+    "header": {
+      "id": "ID",
+      "number": "Number",
+      "type": "Type",
+      "codec": "Codec",
+      "trackName": "Track Name",
+      "language": "Language"
+    },
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge is not available. Please check the MKVToolNix path in Settings. {{detail}}",
+      "mkvmergeFailed": "mkvmerge failed: {{detail}}",
+      "parseError": "Failed to parse mkvmerge output: {{detail}}",
+      "mkvextractNotAvailable": "mkvextract is not available. Please check the MKVToolNix path in Settings. {{detail}}",
+      "mkvextractFailed": "mkvextract failed: {{detail}}"
+    }
+  },
   "toolbar": {
+    "clear": "Clear (Ctrl + Q)",
     "settings": "Settings",
     "about": "About"
   },

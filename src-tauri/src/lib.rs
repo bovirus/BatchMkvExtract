@@ -45,8 +45,22 @@ async fn get_mkv_files(paths: Vec<String>) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+async fn get_mkv_tracks(file: String) -> Result<Vec<protocol::MkvTrack>, String> {
+    mkvtoolnix::get_mkv_tracks(file)
+        .await
+        .map_err(convert_error)
+}
+
+#[tauri::command]
 async fn is_mkvextract_found(path: String) -> Result<protocol::MkvextractStatus, String> {
     mkvtoolnix::is_mkvextract_found(path)
+        .await
+        .map_err(convert_error)
+}
+
+#[tauri::command]
+async fn run_mkvextract(file: String, args: Vec<String>) -> Result<(), String> {
+    mkvtoolnix::run_mkvextract(file, args)
         .await
         .map_err(convert_error)
 }
@@ -58,14 +72,24 @@ async fn set_config(config: config::Config) -> Result<config::Config, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(4)
+        .enable_all()
+        .build()
+        .expect("Failed to build Tokio runtime");
+    tauri::async_runtime::set(runtime.handle().clone());
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             get_about,
             get_config,
             get_mkv_files,
+            get_mkv_tracks,
             is_mkvextract_found,
+            run_mkvextract,
             set_config
         ])
         .setup(|app| {

@@ -23,11 +23,32 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::config;
-use crate::protocol::MkvextractStatus;
+use crate::protocol::{MkvTrack, MkvextractStatus};
 
 struct MkvToolNixResolution {
     path: PathBuf,
     auto_detected: bool,
+}
+
+fn get_tool_path(path: &Path, tool: &str) -> PathBuf {
+    #[cfg(target_os = "windows")]
+    {
+        let exe_path = path.join(format!("{}.exe", tool));
+        if exe_path.exists() && exe_path.is_file() {
+            return exe_path;
+        }
+    }
+    path.join(tool)
+}
+
+fn validate_path_as_file(path: &Path) -> anyhow::Result<()> {
+    if !path.exists() {
+        Err(anyhow::anyhow!("Path {} does not exist.", path.display()))
+    } else if !path.is_file() {
+        Err(anyhow::anyhow!("Path {} is not a file.", path.display()))
+    } else {
+        Ok(())
+    }
 }
 
 fn has_tool(path: &Path, tool: &str) -> bool {
@@ -150,6 +171,83 @@ fn persist_mkvtoolnix_path_if_auto_detected(resolution: &MkvToolNixResolution) -
     }
     cfg.mkv.mkv_toolnix_path = path;
     config::set_config(cfg)?;
+    Ok(())
+}
+
+pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
+    let path = Path::new(file.as_str());
+    validate_path_as_file(path)?;
+    let cfg = config::get_config();
+    let resolution = resolve_mkvtoolnix(&cfg.mkv.mkv_toolnix_path, "mkvmerge");
+    persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
+    let mkvmerge_path = get_tool_path(&resolution.path, "mkvmerge");
+    let mut cmd = std::process::Command::new(&mkvmerge_path);
+    cmd.arg("-J").arg(&file);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    let output = cmd.output().map_err(|e| {
+        anyhow::anyhow!(
+            "MKVMERGE_NOT_AVAILABLE:{}: {}",
+            mkvmerge_path.display(),
+            e
+        )
+    })?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("MKVMERGE_FAILED:{}", stderr));
+    }
+    let json: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .map_err(|e| anyhow::anyhow!("MKVMERGE_PARSE_ERROR:{}", e))?;
+    let tracks = json["tracks"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .map(|t| {
+                    let props = &t["properties"];
+                    MkvTrack {
+                        id: t["id"].as_i64().unwrap_or(0),
+                        number: props["number"].as_i64().unwrap_or(0),
+                        track_type: t["type"].as_str().unwrap_or("").to_owned(),
+                        codec: t["codec"].as_str().unwrap_or("").to_owned(),
+                        codec_id: props["codec_id"].as_str().unwrap_or("").to_owned(),
+                        track_name: props["track_name"].as_str().unwrap_or("").to_owned(),
+                        language: props["language"].as_str().unwrap_or("und").to_owned(),
+                    }
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    Ok(tracks)
+}
+
+pub async fn run_mkvextract(file: String, args: Vec<String>) -> Result<()> {
+    let path = Path::new(file.as_str());
+    validate_path_as_file(path)?;
+    let cfg = config::get_config();
+    let resolution = resolve_mkvtoolnix(&cfg.mkv.mkv_toolnix_path, "mkvextract");
+    persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
+    let mkvextract_path = get_tool_path(&resolution.path, "mkvextract");
+    let mut cmd = std::process::Command::new(&mkvextract_path);
+    cmd.arg(&file).arg("tracks").args(&args);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    let output = cmd.output().map_err(|e| {
+        anyhow::anyhow!(
+            "MKVEXTRACT_NOT_AVAILABLE:{}: {}",
+            mkvextract_path.display(),
+            e
+        )
+    })?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("MKVEXTRACT_FAILED:{}", stderr));
+    }
     Ok(())
 }
 

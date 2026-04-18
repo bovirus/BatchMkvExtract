@@ -29,3 +29,17 @@ pub struct MkvextractStatus {
     #[serde(rename = "mkvToolNixPath")]
     pub mkv_toolnix_path: String,
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MkvTrack {
+    pub id: i64,
+    pub number: i64,
+    #[serde(rename = "type")]
+    pub track_type: String,
+    pub codec: String,
+    #[serde(rename = "codecId")]
+    pub codec_id: String,
+    #[serde(rename = "trackName")]
+    pub track_name: String,
+    pub language: String,
+}

@@ -5,7 +5,30 @@
   "list": {
     "delete": "删除"
   },
+  "extract": {
+    "copyCommand": "复制命令",
+    "extract": "提取",
+    "commandCopied": "命令已复制到剪贴板。",
+    "extractionComplete": "提取完成。",
+    "noTracks": "未找到轨道。",
+    "header": {
+      "id": "ID",
+      "number": "编号",
+      "type": "类型",
+      "codec": "编码",
+      "trackName": "轨道名称",
+      "language": "语言"
+    },
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge 不可用。请在设置中检查 MKVToolNix 路径。{{detail}}",
+      "mkvmergeFailed": "mkvmerge 失败:{{detail}}",
+      "parseError": "无法解析 mkvmerge 的输出:{{detail}}",
+      "mkvextractNotAvailable": "mkvextract 不可用。请在设置中检查 MKVToolNix 路径。{{detail}}",
+      "mkvextractFailed": "mkvextract 失败:{{detail}}"
+    }
+  },
   "toolbar": {
+    "clear": "清空 (Ctrl + Q)",
     "settings": "设置",
     "about": "关于"
   },

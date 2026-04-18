@@ -5,7 +5,30 @@
   "list": {
     "delete": "刪除"
   },
+  "extract": {
+    "copyCommand": "複製指令",
+    "extract": "擷取",
+    "commandCopied": "指令已複製到剪貼簿。",
+    "extractionComplete": "擷取完成。",
+    "noTracks": "找不到軌道。",
+    "header": {
+      "id": "ID",
+      "number": "編號",
+      "type": "類型",
+      "codec": "編碼",
+      "trackName": "軌道名稱",
+      "language": "語言"
+    },
+    "error": {
+      "mkvmergeNotAvailable": "mkvmerge 無法使用。請在設定中檢查 MKVToolNix 路徑。{{detail}}",
+      "mkvmergeFailed": "mkvmerge 失敗:{{detail}}",
+      "parseError": "無法解析 mkvmerge 的輸出:{{detail}}",
+      "mkvextractNotAvailable": "mkvextract 無法使用。請在設定中檢查 MKVToolNix 路徑。{{detail}}",
+      "mkvextractFailed": "mkvextract 失敗:{{detail}}"
+    }
+  },
   "toolbar": {
+    "clear": "清空 (Ctrl + Q)",
     "settings": "設定",
     "about": "關於"
   },

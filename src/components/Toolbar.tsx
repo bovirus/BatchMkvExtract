@@ -15,7 +15,9 @@
  *   limitations under the License.
  */
 
+import { useEffect } from "react";
 import { Box, ButtonGroup, IconButton, Tooltip } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useTranslation } from "react-i18next";
@@ -24,8 +26,30 @@ import { useMkvStore } from "../store";
 export default function Toolbar() {
   const { t } = useTranslation();
   const activeTab = useMkvStore((s) => s.activeTab);
+  const files = useMkvStore((s) => s.files);
   const openSettings = useMkvStore((s) => s.openSettings);
   const openAbout = useMkvStore((s) => s.openAbout);
+  const clearFiles = useMkvStore((s) => s.clearFiles);
+
+  const hasFiles = files.length > 0;
+
+  useEffect(() => {
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (
+        event.ctrlKey &&
+        !event.altKey &&
+        !event.shiftKey &&
+        (event.key === "q" || event.key === "Q")
+      ) {
+        event.stopPropagation();
+        if (useMkvStore.getState().files.length > 0) {
+          clearFiles();
+        }
+      }
+    };
+    document.addEventListener("keyup", handleKeyUp);
+    return () => document.removeEventListener("keyup", handleKeyUp);
+  }, [clearFiles]);
 
   const buttonSx = {
     width: 28,
@@ -40,6 +64,20 @@ export default function Toolbar() {
 
   return (
     <Box sx={{ mx: 1, my: 0, display: "flex", gap: 1 }}>
+      <ButtonGroup variant="outlined" size="small">
+        <Tooltip title={t("toolbar.clear")}>
+          <span>
+            <IconButton
+              sx={buttonSx}
+              disabled={!hasFiles}
+              onClick={clearFiles}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+      </ButtonGroup>
+
       <ButtonGroup variant="outlined" size="small">
         <Tooltip title={t("toolbar.settings")}>
           <IconButton
