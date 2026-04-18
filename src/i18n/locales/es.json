@@ -13,7 +13,14 @@
     "close": "Cerrar"
   },
   "settings": {
-    "title": "Ajustes"
+    "title": "Ajustes",
+    "appearance": "Apariencia",
+    "displayMode": "Modo de visualización",
+    "autoMode": "Auto",
+    "lightMode": "Claro",
+    "darkMode": "Oscuro",
+    "theme": "Tema",
+    "language": "Idioma"
   },
   "about": {
     "title": "Acerca de",

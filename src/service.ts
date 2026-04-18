@@ -16,10 +16,18 @@
  */
 
 import { invoke } from "@tauri-apps/api/core";
-import type { About } from "./protocol";
+import type { About, Config } from "./protocol";
 
 export async function getAbout(): Promise<About> {
   return await invoke<About>("get_about");
+}
+
+export async function getConfig(): Promise<Config> {
+  return await invoke<Config>("get_config");
+}
+
+export async function setConfig(config: Config): Promise<Config> {
+  return await invoke<Config>("set_config", { config });
 }
 
 export async function getMkvFiles(paths: string[]): Promise<string[]> {

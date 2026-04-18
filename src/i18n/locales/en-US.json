@@ -13,7 +13,14 @@
     "close": "Close"
   },
   "settings": {
-    "title": "Settings"
+    "title": "Settings",
+    "appearance": "Appearance",
+    "displayMode": "Display Mode",
+    "autoMode": "Auto",
+    "lightMode": "Light",
+    "darkMode": "Dark",
+    "theme": "Theme",
+    "language": "Language"
   },
   "about": {
     "title": "About",

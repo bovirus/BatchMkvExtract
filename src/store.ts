@@ -16,8 +16,8 @@
  */
 
 import { create } from "zustand";
-import type { About } from "./protocol";
-import { getAbout } from "./service";
+import type { About, Config } from "./protocol";
+import { getAbout, getConfig, setConfig } from "./service";
 
 export type TabType = "fileList" | "settings" | "about";
 
@@ -27,6 +27,7 @@ interface MkvStore {
   showSettings: boolean;
   showAbout: boolean;
   about: About | null;
+  config: Config | null;
   addFiles: (paths: string[]) => void;
   clearFiles: () => void;
   setActiveTab: (type: TabType) => void;
@@ -35,14 +36,17 @@ interface MkvStore {
   closeSettings: () => void;
   closeAbout: () => void;
   initAbout: () => Promise<void>;
+  initConfig: () => Promise<void>;
+  updateConfig: (patch: Partial<Config>) => Promise<void>;
 }
 
-export const useMkvStore = create<MkvStore>((set) => ({
+export const useMkvStore = create<MkvStore>((set, get) => ({
   files: [],
   activeTab: "fileList",
   showSettings: false,
   showAbout: false,
   about: null,
+  config: null,
   addFiles: (paths) =>
     set((state) => {
       const existing = new Set(state.files);
@@ -69,6 +73,26 @@ export const useMkvStore = create<MkvStore>((set) => ({
       set({ about });
     } catch (err) {
       console.error("Failed to load about info", err);
+    }
+  },
+  initConfig: async () => {
+    try {
+      const config = await getConfig();
+      set({ config });
+    } catch (err) {
+      console.error("Failed to load config", err);
+    }
+  },
+  updateConfig: async (patch) => {
+    const current = get().config;
+    if (!current) return;
+    const next = { ...current, ...patch };
+    set({ config: next });
+    try {
+      const saved = await setConfig(next);
+      set({ config: saved });
+    } catch (err) {
+      console.error("Failed to save config", err);
     }
   },
 }));

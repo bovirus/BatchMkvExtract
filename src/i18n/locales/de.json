@@ -13,7 +13,14 @@
     "close": "Schließen"
   },
   "settings": {
-    "title": "Einstellungen"
+    "title": "Einstellungen",
+    "appearance": "Darstellung",
+    "displayMode": "Anzeigemodus",
+    "autoMode": "Automatisch",
+    "lightMode": "Hell",
+    "darkMode": "Dunkel",
+    "theme": "Design",
+    "language": "Sprache"
   },
   "about": {
     "title": "Info",

@@ -13,7 +13,14 @@
     "close": "閉じる"
   },
   "settings": {
-    "title": "設定"
+    "title": "設定",
+    "appearance": "外観",
+    "displayMode": "表示モード",
+    "autoMode": "自動",
+    "lightMode": "ライト",
+    "darkMode": "ダーク",
+    "theme": "テーマ",
+    "language": "言語"
   },
   "about": {
     "title": "情報",

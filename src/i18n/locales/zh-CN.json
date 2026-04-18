@@ -13,7 +13,14 @@
     "close": "关闭"
   },
   "settings": {
-    "title": "设置"
+    "title": "设置",
+    "appearance": "外观",
+    "displayMode": "显示模式",
+    "autoMode": "自动",
+    "lightMode": "浅色",
+    "darkMode": "深色",
+    "theme": "主题",
+    "language": "语言"
   },
   "about": {
     "title": "关于",

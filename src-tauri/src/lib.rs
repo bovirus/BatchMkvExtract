@@ -34,15 +34,30 @@ async fn get_about() -> Result<protocol::About, String> {
 }
 
 #[tauri::command]
+async fn get_config() -> Result<config::Config, String> {
+    controller::get_config().await.map_err(convert_error)
+}
+
+#[tauri::command]
 async fn get_mkv_files(paths: Vec<String>) -> Result<Vec<String>, String> {
     controller::get_mkv_files(paths).await.map_err(convert_error)
+}
+
+#[tauri::command]
+async fn set_config(config: config::Config) -> Result<config::Config, String> {
+    controller::set_config(config).await.map_err(convert_error)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_about, get_mkv_files])
+        .invoke_handler(tauri::generate_handler![
+            get_about,
+            get_config,
+            get_mkv_files,
+            set_config
+        ])
         .setup(|app| {
             use tauri::Manager;
             let window = app.get_webview_window("main").unwrap();

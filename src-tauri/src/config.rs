@@ -28,6 +28,12 @@ static CONFIG: OnceLock<RwLock<Config>> = OnceLock::new();
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
+    #[serde(rename = "displayMode", default)]
+    pub display_mode: DisplayMode,
+    #[serde(default)]
+    pub theme: Theme,
+    #[serde(default)]
+    pub language: Language,
     #[serde(default)]
     pub window: ConfigWindow,
 }
@@ -35,8 +41,81 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
+            display_mode: Default::default(),
+            theme: Default::default(),
+            language: Default::default(),
             window: Default::default(),
         }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum DisplayMode {
+    Auto,
+    Light,
+    Dark,
+}
+
+impl Default for DisplayMode {
+    fn default() -> Self {
+        Self::Auto
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum Theme {
+    #[serde(alias = "Default")]
+    Ocean,
+    Aqua,
+    Sky,
+    Arctic,
+    Glacier,
+    Mist,
+    Slate,
+    Charcoal,
+    Midnight,
+    Indigo,
+    Violet,
+    Lavender,
+    Rose,
+    Blush,
+    Coral,
+    Sunset,
+    Amber,
+    Sand,
+    Forest,
+    Emerald,
+}
+
+impl Default for Theme {
+    fn default() -> Self {
+        Self::Ocean
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum Language {
+    #[serde(rename = "de")]
+    De,
+    #[serde(rename = "en-US")]
+    EnUS,
+    #[serde(rename = "es")]
+    Es,
+    #[serde(rename = "fr")]
+    Fr,
+    #[serde(rename = "ja")]
+    Ja,
+    #[serde(rename = "zh-CN")]
+    ZhCN,
+    #[serde(rename = "zh-HK")]
+    ZhHK,
+    #[serde(rename = "zh-TW")]
+    ZhTW,
+}
+
+impl Default for Language {
+    fn default() -> Self {
+        Self::EnUS
     }
 }
 

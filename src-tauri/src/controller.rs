@@ -18,6 +18,7 @@
 use anyhow::Result;
 use std::path::{Path, PathBuf};
 
+use crate::config;
 use crate::protocol::About;
 
 const MKV_EXTENSION: &str = "mkv";
@@ -26,6 +27,15 @@ pub async fn get_about() -> Result<About> {
     Ok(About {
         app_version: get_app_version().to_owned(),
     })
+}
+
+pub async fn get_config() -> Result<config::Config> {
+    Ok(config::get_config())
+}
+
+pub async fn set_config(config: config::Config) -> Result<config::Config> {
+    config::set_config(config)?;
+    Ok(config::get_config())
 }
 
 pub fn get_app_version() -> &'static str {
