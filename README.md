@@ -6,12 +6,18 @@ BatchMkvExtract is a desktop GUI that drives [mkvextract](https://mkvtoolnix.dow
 
 ## Features
 
-* Cross-platform (Windows, Linux, MacOS)
-* TODO
+* Cross-platform: Windows, Linux, macOS (intel + arm64)
+* Drag and drop `.mkv` files or folders
+* Per-drive parallel extraction with queue
+* Profile-based track filename templates
+* Live progress bar with elapsed time and ETA
+* Cancel extractions from the card or queue
+* 8 UI languages with light and dark modes
 
 ## Documentation
 
 * [Development](docs/development.md)
+* [Release Notes](docs/release_notes.md)
 
 ## License
 
