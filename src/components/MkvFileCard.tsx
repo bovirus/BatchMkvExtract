@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -50,8 +50,13 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import { basename, dirname, extname, join, sep as getSep } from "@tauri-apps/api/path";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useTranslation } from "react-i18next";
-import { formatHMS } from "../extract-utils";
-import type { MkvTrack } from "../protocol";
+import {
+  formatHMS,
+  pickTemplateForTrackType,
+  renderTemplate,
+  shouldSelectTrackType,
+} from "../extract-utils";
+import type { ConfigProfile, MkvTrack } from "../protocol";
 import { QueueItemStatus } from "../protocol";
 import { cancelExtract, enqueueExtract, getMkvTracks } from "../service";
 import { useMkvStore } from "../store";
@@ -217,22 +222,33 @@ async function getFileNameWithoutExt(filePath: string): Promise<string> {
 function buildOutputFileName(
   fileNameWithoutExt: string,
   track: MkvTrack,
+  profile: ConfigProfile,
 ): string {
+  const template = pickTemplateForTrackType(profile, track.type);
+  const base = renderTemplate(template, {
+    fileName: fileNameWithoutExt,
+    trackId: track.id,
+    trackNumber: track.number,
+    language: track.language,
+    codecName: track.codec,
+    trackName: track.trackName,
+  });
   const ext = getTrackExtension(track.codecId, track.type);
-  return `${fileNameWithoutExt}_${track.number}_${track.language}.${ext}`;
+  return `${base}.${ext}`;
 }
 
 async function buildExtractArgs(
   file: string,
   outputDir: string,
   tracks: MkvTrack[],
+  profile: ConfigProfile,
 ): Promise<string[]> {
   const fileNameWithoutExt = await getFileNameWithoutExt(file);
   const results: string[] = [];
   for (const track of tracks) {
     const outFile = await join(
       outputDir,
-      buildOutputFileName(fileNameWithoutExt, track),
+      buildOutputFileName(fileNameWithoutExt, track, profile),
     );
     results.push(`${track.id}:${outFile}`);
   }
@@ -244,6 +260,7 @@ async function buildCommandString(
   outputDir: string,
   mkvToolNixPath: string,
   tracks: MkvTrack[],
+  profile: ConfigProfile,
 ): Promise<string> {
   const sep = getSep();
   const mkvextractPath = `${mkvToolNixPath}${sep}mkvextract`;
@@ -252,7 +269,7 @@ async function buildCommandString(
   for (const track of tracks) {
     const outFile = await join(
       outputDir,
-      buildOutputFileName(fileNameWithoutExt, track),
+      buildOutputFileName(fileNameWithoutExt, track, profile),
     );
     args.push(`${track.id}:"${outFile}"`);
   }
@@ -273,6 +290,15 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
     (s) => s.unregisterExtractHandler,
   );
   const setFileHasSelection = useMkvStore((s) => s.setFileHasSelection);
+  const activeProfile = useMkvStore((s) => {
+    const cfg = s.config;
+    if (!cfg) return null;
+    return (
+      cfg.profiles.find((p) => p.name === cfg.activeProfile) ??
+      cfg.profiles[0] ??
+      null
+    );
+  });
 
   const isExtracting = entry?.status === QueueItemStatus.Extracting;
   const isQueued = entry?.status === QueueItemStatus.Waiting;
@@ -286,6 +312,22 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
     message: string;
     severity: "success" | "error";
   } | null>(null);
+  const autoSelectedRef = useRef(false);
+
+  useEffect(() => {
+    if (autoSelectedRef.current) return;
+    if (tracks.length === 0 || !activeProfile) return;
+    autoSelectedRef.current = true;
+    const auto = new Set<number>();
+    for (const track of tracks) {
+      if (shouldSelectTrackType(activeProfile, track.type)) {
+        auto.add(track.id);
+      }
+    }
+    if (auto.size > 0) {
+      setSelectedIds(auto);
+    }
+  }, [tracks, activeProfile]);
 
   useEffect(() => {
     let cancelled = false;
@@ -348,7 +390,7 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
   };
 
   const handleCopyCommand = async () => {
-    if (!hasSelection) return;
+    if (!hasSelection || !activeProfile) return;
     try {
       const outputDir = await dirname(path);
       const command = await buildCommandString(
@@ -356,6 +398,7 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
         outputDir,
         mkvToolNixPath,
         selectedTracks,
+        activeProfile,
       );
       await writeText(command);
       setSnackbar({
@@ -368,10 +411,15 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
   };
 
   const handleExtract = async () => {
-    if (!hasSelection || isActive) return;
+    if (!hasSelection || isActive || !activeProfile) return;
     try {
       const outputDir = await dirname(path);
-      const args = await buildExtractArgs(path, outputDir, selectedTracks);
+      const args = await buildExtractArgs(
+        path,
+        outputDir,
+        selectedTracks,
+        activeProfile,
+      );
       await enqueueExtract(path, args);
       addToQueue(path);
     } catch (err) {
@@ -386,6 +434,26 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
     } catch (err) {
       setSnackbar({ message: String(err), severity: "error" });
     }
+  };
+
+  const handleDelete = async () => {
+    const current = useMkvStore.getState().queueItems[path];
+    if (current?.status === QueueItemStatus.Extracting) {
+      return;
+    }
+    if (current?.status === QueueItemStatus.Waiting) {
+      try {
+        await cancelExtract(path);
+      } catch {
+        // ignore; backend may already have dropped the task
+      }
+      const later = useMkvStore.getState().queueItems[path];
+      if (later?.status === QueueItemStatus.Extracting) {
+        return;
+      }
+      useMkvStore.getState().removeFromQueue(path);
+    }
+    removeFile(path);
   };
 
   useEffect(() => {
@@ -436,8 +504,8 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
           <IconButton
             size="small"
             color="error"
-            disabled={isActive}
-            onClick={() => removeFile(path)}
+            disabled={isExtracting}
+            onClick={handleDelete}
           >
             <DeleteIcon fontSize="small" />
           </IconButton>

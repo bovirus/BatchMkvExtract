@@ -19,7 +19,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
+  Checkbox,
   FormControl,
+  FormControlLabel,
   MenuItem,
   Paper,
   Select,
@@ -34,6 +36,7 @@ import ContentCutIcon from "@mui/icons-material/ContentCut";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import PaletteIcon from "@mui/icons-material/Palette";
+import PersonIcon from "@mui/icons-material/Person";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
 import * as Protocol from "../protocol";
@@ -86,9 +89,17 @@ export default function Settings() {
   const { t } = useTranslation();
   const config = useMkvStore((s) => s.config);
   const updateConfig = useMkvStore((s) => s.updateConfig);
+  const updateActiveProfile = useMkvStore((s) => s.updateActiveProfile);
+  const addProfile = useMkvStore((s) => s.addProfile);
+  const deleteActiveProfile = useMkvStore((s) => s.deleteActiveProfile);
+  const setActiveProfile = useMkvStore((s) => s.setActiveProfile);
+  const resetActiveProfileTemplates = useMkvStore(
+    (s) => s.resetActiveProfileTemplates,
+  );
 
   const [mkvToolNixPath, setMkvToolNixPath] = useState("");
   const [mkvextractFound, setMkvextractFound] = useState(false);
+  const [newProfileName, setNewProfileName] = useState("");
   const checkDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
@@ -241,6 +252,162 @@ export default function Settings() {
             </FormControl>
           </SettingRow>
         </Paper>
+
+        {(() => {
+          const activeProfile =
+            config.profiles.find((p) => p.name === config.activeProfile) ??
+            config.profiles[0];
+          if (!activeProfile) return null;
+          const trimmed = newProfileName.trim();
+          const canAdd =
+            trimmed.length > 0 &&
+            !config.profiles.some((p) => p.name === trimmed);
+          const canDelete =
+            config.activeProfile !== Protocol.DEFAULT_PROFILE_NAME;
+          return (
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+              <SectionHeader
+                icon={<PersonIcon fontSize="small" />}
+                title={t("settings.profiles")}
+              />
+              <SettingRow label={t("settings.activeProfile")}>
+                <FormControl size="small" sx={{ minWidth: 180 }}>
+                  <Select
+                    value={config.activeProfile}
+                    onChange={(e) => setActiveProfile(e.target.value)}
+                  >
+                    {config.profiles.map((p) => (
+                      <MenuItem key={p.name} value={p.name}>
+                        {p.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </SettingRow>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  py: 1,
+                  borderBottom: 1,
+                  borderColor: "divider",
+                }}
+              >
+                <TextField
+                  size="small"
+                  placeholder={t("settings.newProfileName")}
+                  value={newProfileName}
+                  onChange={(e) => setNewProfileName(e.target.value)}
+                  sx={{ flex: 1 }}
+                />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled={!canAdd}
+                  onClick={async () => {
+                    await addProfile(trimmed);
+                    setNewProfileName("");
+                  }}
+                  sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                >
+                  {t("settings.addProfile")}
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="error"
+                  disabled={!canDelete}
+                  onClick={() => deleteActiveProfile()}
+                  sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                >
+                  {t("settings.deleteProfile")}
+                </Button>
+              </Box>
+              <Stack spacing={1.5} sx={{ py: 1 }}>
+                {(
+                  [
+                    {
+                      typeKey: "video" as const,
+                      templateKey: "videoTemplate" as const,
+                      selectKey: "selectVideo" as const,
+                      label: t("settings.video"),
+                    },
+                    {
+                      typeKey: "audio" as const,
+                      templateKey: "audioTemplate" as const,
+                      selectKey: "selectAudio" as const,
+                      label: t("settings.audio"),
+                    },
+                    {
+                      typeKey: "subtitles" as const,
+                      templateKey: "subtitleTemplate" as const,
+                      selectKey: "selectSubtitle" as const,
+                      label: t("settings.subtitles"),
+                    },
+                  ] as const
+                ).map((row) => (
+                  <Box key={row.typeKey}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontWeight: 600 }}
+                    >
+                      {row.label}
+                    </Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={activeProfile[row.templateKey]}
+                      onChange={(e) =>
+                        updateActiveProfile({
+                          [row.templateKey]: e.target.value,
+                        })
+                      }
+                      sx={{ mt: 0.5 }}
+                    />
+                    <FormControlLabel
+                      sx={{ mt: 0.5 }}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={activeProfile[row.selectKey]}
+                          onChange={(e) =>
+                            updateActiveProfile({
+                              [row.selectKey]: e.target.checked,
+                            })
+                          }
+                        />
+                      }
+                      label={
+                        <Typography variant="caption">
+                          {t("settings.autoSelectOnDrop")}
+                        </Typography>
+                      }
+                    />
+                  </Box>
+                ))}
+              </Stack>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 1 }}
+              >
+                {t("settings.templateTokensHint")}
+              </Typography>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => resetActiveProfileTemplates()}
+                  sx={{ textTransform: "none" }}
+                >
+                  {t("settings.resetTemplates")}
+                </Button>
+              </Box>
+            </Paper>
+          );
+        })()}
 
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
           <SectionHeader

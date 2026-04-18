@@ -31,7 +31,8 @@
   "toolbar": {
     "extractAll": "全部擷取 (F3)",
     "clear": "清空 (Ctrl + Q)",
-    "settings": "設定",
+    "profile": "設定檔 (F9)",
+    "settings": "設定 (F10)",
     "about": "關於"
   },
   "tabs": {
@@ -73,7 +74,18 @@
     "mkvToolNixPath": "MKVToolNix 路徑",
     "browse": "瀏覽",
     "mkvextractFound": "已在 MKVToolNix 路徑下找到 mkvextract。",
-    "mkvextractNotFound": "在 MKVToolNix 路徑下未找到 mkvextract。"
+    "mkvextractNotFound": "在 MKVToolNix 路徑下未找到 mkvextract。",
+    "profiles": "設定檔",
+    "activeProfile": "目前設定檔",
+    "newProfileName": "新設定檔名稱",
+    "addProfile": "新增",
+    "deleteProfile": "刪除",
+    "video": "影像",
+    "audio": "音訊",
+    "subtitles": "字幕",
+    "autoSelectOnDrop": "加入檔案時自動選取",
+    "templateTokensHint": "變數: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
+    "resetTemplates": "還原預設值"
   },
   "about": {
     "title": "關於",

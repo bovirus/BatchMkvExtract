@@ -20,10 +20,15 @@ import { getDriveKey } from "./extract-utils";
 import type {
   About,
   Config,
+  ConfigProfile,
   ExtractEntry,
   ExtractOutcome,
 } from "./protocol";
-import { QueueItemStatus } from "./protocol";
+import {
+  DEFAULT_PROFILE_NAME,
+  QueueItemStatus,
+  createDefaultProfile,
+} from "./protocol";
 export { QueueItemStatus } from "./protocol";
 import { getAbout, getConfig, setConfig } from "./service";
 
@@ -70,8 +75,14 @@ interface MkvStore {
   initAbout: () => Promise<void>;
   initConfig: () => Promise<void>;
   updateConfig: (patch: Partial<Config>) => Promise<void>;
+  updateActiveProfile: (patch: Partial<ConfigProfile>) => Promise<void>;
+  addProfile: (name: string) => Promise<void>;
+  deleteActiveProfile: () => Promise<void>;
+  setActiveProfile: (name: string) => Promise<void>;
+  resetActiveProfileTemplates: () => Promise<void>;
   applyExtractSnapshot: (entries: ExtractEntry[]) => void;
   addToQueue: (file: string) => void;
+  removeFromQueue: (file: string) => void;
   markCancelRequested: (file: string) => void;
   recordFinishedOutcome: (
     file: string,
@@ -139,11 +150,57 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
     const next = { ...current, ...patch };
     set({ config: next });
     try {
-      const saved = await setConfig(next);
-      set({ config: saved });
+      await setConfig(next);
     } catch (err) {
       console.error("Failed to save config", err);
     }
+  },
+  updateActiveProfile: async (patch) => {
+    const current = get().config;
+    if (!current) return;
+    const profiles = current.profiles.map((p) =>
+      p.name === current.activeProfile ? { ...p, ...patch } : p,
+    );
+    await get().updateConfig({ profiles });
+  },
+  addProfile: async (name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const current = get().config;
+    if (!current) return;
+    if (current.profiles.some((p) => p.name === trimmed)) return;
+    const fresh = createDefaultProfile(trimmed);
+    await get().updateConfig({
+      profiles: [...current.profiles, fresh],
+      activeProfile: trimmed,
+    });
+  },
+  deleteActiveProfile: async () => {
+    const current = get().config;
+    if (!current) return;
+    if (current.activeProfile === DEFAULT_PROFILE_NAME) return;
+    const profiles = current.profiles.filter(
+      (p) => p.name !== current.activeProfile,
+    );
+    await get().updateConfig({
+      profiles,
+      activeProfile: DEFAULT_PROFILE_NAME,
+    });
+  },
+  setActiveProfile: async (name) => {
+    const current = get().config;
+    if (!current) return;
+    if (!current.profiles.some((p) => p.name === name)) return;
+    await get().updateConfig({ activeProfile: name });
+  },
+  resetActiveProfileTemplates: async () => {
+    const current = get().config;
+    if (!current) return;
+    const fresh = createDefaultProfile(current.activeProfile);
+    const profiles = current.profiles.map((p) =>
+      p.name === current.activeProfile ? fresh : p,
+    );
+    await get().updateConfig({ profiles });
   },
   applyExtractSnapshot: (entries) => {
     const now = Date.now();
@@ -236,6 +293,16 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
       });
     }
   },
+  removeFromQueue: (file) =>
+    set((state) => {
+      if (!state.queueItems[file]) return {};
+      const nextItems = { ...state.queueItems };
+      delete nextItems[file];
+      return {
+        queueItems: nextItems,
+        queueOrder: state.queueOrder.filter((f) => f !== file),
+      };
+    }),
   markCancelRequested: (file) =>
     set((state) => {
       const existing = state.queueItems[file];

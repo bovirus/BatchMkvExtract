@@ -36,8 +36,22 @@ pub struct Config {
     pub language: Language,
     #[serde(default)]
     pub mkv: ConfigMkv,
+    #[serde(default = "Config::default_profiles")]
+    pub profiles: Vec<ConfigProfile>,
+    #[serde(rename = "activeProfile", default = "Config::default_active_profile")]
+    pub active_profile: String,
     #[serde(default)]
     pub window: ConfigWindow,
+}
+
+impl Config {
+    fn default_profiles() -> Vec<ConfigProfile> {
+        vec![ConfigProfile::default()]
+    }
+
+    fn default_active_profile() -> String {
+        ConfigProfile::DEFAULT_NAME.to_owned()
+    }
 }
 
 impl Default for Config {
@@ -47,7 +61,59 @@ impl Default for Config {
             theme: Default::default(),
             language: Default::default(),
             mkv: Default::default(),
+            profiles: Self::default_profiles(),
+            active_profile: Self::default_active_profile(),
             window: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConfigProfile {
+    pub name: String,
+    #[serde(rename = "videoTemplate", default = "ConfigProfile::default_template")]
+    pub video_template: String,
+    #[serde(rename = "audioTemplate", default = "ConfigProfile::default_template")]
+    pub audio_template: String,
+    #[serde(
+        rename = "subtitleTemplate",
+        default = "ConfigProfile::default_template"
+    )]
+    pub subtitle_template: String,
+    #[serde(rename = "selectVideo", default)]
+    pub select_video: bool,
+    #[serde(rename = "selectAudio", default)]
+    pub select_audio: bool,
+    #[serde(
+        rename = "selectSubtitle",
+        default = "ConfigProfile::default_select_subtitle"
+    )]
+    pub select_subtitle: bool,
+}
+
+impl ConfigProfile {
+    pub const DEFAULT_NAME: &'static str = "Default";
+    pub const DEFAULT_TEMPLATE: &'static str = "{file_name}.{track_id}.{language}";
+
+    fn default_template() -> String {
+        Self::DEFAULT_TEMPLATE.to_owned()
+    }
+
+    fn default_select_subtitle() -> bool {
+        true
+    }
+}
+
+impl Default for ConfigProfile {
+    fn default() -> Self {
+        Self {
+            name: Self::DEFAULT_NAME.to_owned(),
+            video_template: Self::default_template(),
+            audio_template: Self::default_template(),
+            subtitle_template: Self::default_template(),
+            select_video: false,
+            select_audio: false,
+            select_subtitle: true,
         }
     }
 }

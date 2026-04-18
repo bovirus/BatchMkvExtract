@@ -31,7 +31,8 @@
   "toolbar": {
     "extractAll": "すべて抽出 (F3)",
     "clear": "クリア (Ctrl + Q)",
-    "settings": "設定",
+    "profile": "プロファイル (F9)",
+    "settings": "設定 (F10)",
     "about": "情報"
   },
   "tabs": {
@@ -73,7 +74,18 @@
     "mkvToolNixPath": "MKVToolNix のパス",
     "browse": "参照",
     "mkvextractFound": "MKVToolNix のパスに mkvextract が見つかりました。",
-    "mkvextractNotFound": "MKVToolNix のパスに mkvextract が見つかりません。"
+    "mkvextractNotFound": "MKVToolNix のパスに mkvextract が見つかりません。",
+    "profiles": "プロファイル",
+    "activeProfile": "アクティブなプロファイル",
+    "newProfileName": "新しいプロファイル名",
+    "addProfile": "追加",
+    "deleteProfile": "削除",
+    "video": "ビデオ",
+    "audio": "オーディオ",
+    "subtitles": "字幕",
+    "autoSelectOnDrop": "追加時に自動で選択",
+    "templateTokensHint": "トークン: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
+    "resetTemplates": "デフォルトに戻す"
   },
   "about": {
     "title": "情報",

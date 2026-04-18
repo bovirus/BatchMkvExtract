@@ -15,13 +15,25 @@
  *   limitations under the License.
  */
 
-import { useCallback, useEffect } from "react";
-import { Box, ButtonGroup, IconButton, Tooltip } from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Box,
+  ButtonGroup,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Tooltip,
+} from "@mui/material";
+import CheckIcon from "@mui/icons-material/Check";
 import ContentCutIcon from "@mui/icons-material/ContentCut";
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";
+import PersonIcon from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useTranslation } from "react-i18next";
+import { QueueItemStatus } from "../protocol";
 import { useMkvStore } from "../store";
 
 export default function Toolbar() {
@@ -35,6 +47,25 @@ export default function Toolbar() {
   const hasFiles = files.length > 0;
   const fileHasSelection = useMkvStore((s) => s.fileHasSelection);
   const canExtractAll = files.some((f) => fileHasSelection[f]);
+  const queueItems = useMkvStore((s) => s.queueItems);
+  const hasActiveJobs = Object.values(queueItems).some(
+    (item) =>
+      item.status === QueueItemStatus.Waiting ||
+      item.status === QueueItemStatus.Extracting,
+  );
+  const canClear = hasFiles && !hasActiveJobs;
+  const config = useMkvStore((s) => s.config);
+  const setActiveProfile = useMkvStore((s) => s.setActiveProfile);
+  const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement | null>(null);
+  const profiles = config?.profiles ?? [];
+  const activeProfileName = config?.activeProfile ?? "";
+
+  const openProfileMenu = useCallback(() => {
+    if (profileButtonRef.current) {
+      setProfileAnchor(profileButtonRef.current);
+    }
+  }, []);
 
   const runExtractAll = useCallback(async () => {
     const state = useMkvStore.getState();
@@ -49,7 +80,11 @@ export default function Toolbar() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "F3") {
+      if (
+        event.key === "F3" ||
+        event.key === "F9" ||
+        event.key === "F10"
+      ) {
         event.preventDefault();
       }
     };
@@ -61,7 +96,13 @@ export default function Toolbar() {
         (event.key === "q" || event.key === "Q")
       ) {
         event.stopPropagation();
-        if (useMkvStore.getState().files.length > 0) {
+        const state = useMkvStore.getState();
+        const hasActive = Object.values(state.queueItems).some(
+          (item) =>
+            item.status === QueueItemStatus.Waiting ||
+            item.status === QueueItemStatus.Extracting,
+        );
+        if (state.files.length > 0 && !hasActive) {
           clearFiles();
         }
       } else if (
@@ -76,6 +117,24 @@ export default function Toolbar() {
         if (state.files.some((f) => state.fileHasSelection[f])) {
           runExtractAll();
         }
+      } else if (
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key === "F9"
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        openProfileMenu();
+      } else if (
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key === "F10"
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        openSettings();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -84,7 +143,7 @@ export default function Toolbar() {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
     };
-  }, [clearFiles, runExtractAll]);
+  }, [clearFiles, runExtractAll, openProfileMenu, openSettings]);
 
   const buttonSx = {
     width: 28,
@@ -115,7 +174,7 @@ export default function Toolbar() {
           <span>
             <IconButton
               sx={buttonSx}
-              disabled={!hasFiles}
+              disabled={!canClear}
               onClick={clearFiles}
             >
               <DeleteIcon fontSize="small" />
@@ -125,6 +184,18 @@ export default function Toolbar() {
       </ButtonGroup>
 
       <ButtonGroup variant="outlined" size="small">
+        <Tooltip title={t("toolbar.profile")}>
+          <span>
+            <IconButton
+              ref={profileButtonRef}
+              sx={buttonSx}
+              disabled={profiles.length === 0}
+              onClick={(e) => setProfileAnchor(e.currentTarget)}
+            >
+              <PersonIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
         <Tooltip title={t("toolbar.settings")}>
           <IconButton
             sx={activeTab === "settings" ? activeButtonSx : buttonSx}
@@ -142,6 +213,34 @@ export default function Toolbar() {
           </IconButton>
         </Tooltip>
       </ButtonGroup>
+
+      <Menu
+        anchorEl={profileAnchor}
+        open={Boolean(profileAnchor)}
+        onClose={() => setProfileAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+      >
+        {profiles.map((p) => (
+          <MenuItem
+            key={p.name}
+            selected={p.name === activeProfileName}
+            onClick={() => {
+              setActiveProfile(p.name);
+              setProfileAnchor(null);
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 28 }}>
+              {p.name === activeProfileName && (
+                <CheckIcon fontSize="small" color="primary" />
+              )}
+            </ListItemIcon>
+            <ListItemText slotProps={{ primary: { variant: "body2" } }}>
+              {p.name}
+            </ListItemText>
+          </MenuItem>
+        ))}
+      </Menu>
     </Box>
   );
 }

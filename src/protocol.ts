@@ -81,12 +81,39 @@ export interface ConfigMkv {
   mkvToolNixPath: string;
 }
 
+export interface ConfigProfile {
+  name: string;
+  videoTemplate: string;
+  audioTemplate: string;
+  subtitleTemplate: string;
+  selectVideo: boolean;
+  selectAudio: boolean;
+  selectSubtitle: boolean;
+}
+
 export interface Config {
   displayMode: DisplayMode;
   theme: Theme;
   language: Language;
   mkv: ConfigMkv;
+  profiles: ConfigProfile[];
+  activeProfile: string;
   window: ConfigWindow;
+}
+
+export const DEFAULT_PROFILE_NAME = "Default";
+export const DEFAULT_TEMPLATE = "{file_name}.{track_id}.{language}";
+
+export function createDefaultProfile(name = DEFAULT_PROFILE_NAME): ConfigProfile {
+  return {
+    name,
+    videoTemplate: DEFAULT_TEMPLATE,
+    audioTemplate: DEFAULT_TEMPLATE,
+    subtitleTemplate: DEFAULT_TEMPLATE,
+    selectVideo: false,
+    selectAudio: false,
+    selectSubtitle: name === DEFAULT_PROFILE_NAME,
+  };
 }
 
 export interface MkvextractStatus {

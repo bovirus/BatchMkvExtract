@@ -31,7 +31,8 @@
   "toolbar": {
     "extractAll": "Extraer todo (F3)",
     "clear": "Limpiar (Ctrl + Q)",
-    "settings": "Ajustes",
+    "profile": "Perfil (F9)",
+    "settings": "Ajustes (F10)",
     "about": "Acerca de"
   },
   "tabs": {
@@ -73,7 +74,18 @@
     "mkvToolNixPath": "Ruta de MKVToolNix",
     "browse": "Examinar",
     "mkvextractFound": "mkvextract encontrado en la ruta de MKVToolNix.",
-    "mkvextractNotFound": "mkvextract no encontrado en la ruta de MKVToolNix."
+    "mkvextractNotFound": "mkvextract no encontrado en la ruta de MKVToolNix.",
+    "profiles": "Perfiles",
+    "activeProfile": "Perfil activo",
+    "newProfileName": "Nombre del nuevo perfil",
+    "addProfile": "Añadir",
+    "deleteProfile": "Eliminar",
+    "video": "Video",
+    "audio": "Audio",
+    "subtitles": "Subtítulos",
+    "autoSelectOnDrop": "Seleccionar automáticamente al añadir",
+    "templateTokensHint": "Variables: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
+    "resetTemplates": "Restablecer valores predeterminados"
   },
   "about": {
     "title": "Acerca de",
