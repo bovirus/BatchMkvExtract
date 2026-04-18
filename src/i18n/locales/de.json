@@ -53,9 +53,11 @@
       "eta": "Verbleibend"
     },
     "status": {
-      "queued": "Wartend",
+      "waiting": "Wartend",
       "extracting": "Extrahiere",
-      "completed": "Fertig"
+      "completed": "Fertig",
+      "cancelled": "Abgebrochen",
+      "failed": "Fehlgeschlagen"
     }
   },
   "settings": {

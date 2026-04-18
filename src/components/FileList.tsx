@@ -18,8 +18,10 @@
 import { useEffect } from "react";
 import { Box, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useTranslation } from "react-i18next";
+import type { ExtractionFinishedEvent } from "../protocol";
 import { getExtractStatus } from "../service";
 import { useMkvStore } from "../store";
 import { MkvFileCard } from "./MkvFileCard";
@@ -31,6 +33,7 @@ export default function FileList() {
   const files = useMkvStore((s) => s.files);
   const addFiles = useMkvStore((s) => s.addFiles);
   const applyExtractSnapshot = useMkvStore((s) => s.applyExtractSnapshot);
+  const recordFinishedOutcome = useMkvStore((s) => s.recordFinishedOutcome);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +56,19 @@ export default function FileList() {
       clearInterval(id);
     };
   }, [applyExtractSnapshot]);
+
+  useEffect(() => {
+    const unlistenPromise = listen<ExtractionFinishedEvent>(
+      "extraction-finished",
+      (event) => {
+        const { file, outcome, error } = event.payload;
+        recordFinishedOutcome(file, outcome, error);
+      },
+    );
+    return () => {
+      unlistenPromise.then((fn) => fn());
+    };
+  }, [recordFinishedOutcome]);
 
   useEffect(() => {
     const unlistenPromise = getCurrentWebviewWindow().onDragDropEvent(

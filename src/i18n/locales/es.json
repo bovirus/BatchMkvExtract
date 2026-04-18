@@ -53,9 +53,11 @@
       "eta": "Restante"
     },
     "status": {
-      "queued": "En cola",
+      "waiting": "En espera",
       "extracting": "Extrayendo",
-      "completed": "Completado"
+      "completed": "Completado",
+      "cancelled": "Cancelado",
+      "failed": "Fallido"
     }
   },
   "settings": {

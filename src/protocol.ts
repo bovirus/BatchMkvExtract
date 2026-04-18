@@ -104,16 +104,37 @@ export interface MkvTrack {
   language: string;
 }
 
-export type ExtractStatus = "queued" | "extracting";
+export enum QueueItemStatus {
+  Waiting = "Waiting",
+  Extracting = "Extracting",
+  Completed = "Completed",
+  Cancelled = "Cancelled",
+  Failed = "Failed",
+}
+
+export type ExtractActiveStatus =
+  | QueueItemStatus.Waiting
+  | QueueItemStatus.Extracting;
+
+export type ExtractOutcome =
+  | QueueItemStatus.Completed
+  | QueueItemStatus.Cancelled
+  | QueueItemStatus.Failed;
 
 export interface ExtractEntry {
   file: string;
-  status: ExtractStatus;
+  status: ExtractActiveStatus;
   progress: number;
 }
 
 export interface ExtractSnapshot {
   entries: ExtractEntry[];
+}
+
+export interface ExtractionFinishedEvent {
+  file: string;
+  outcome: ExtractOutcome;
+  error: string | null;
 }
 
 export function getDisplayModes(): DisplayMode[] {

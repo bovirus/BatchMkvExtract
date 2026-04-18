@@ -50,7 +50,9 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import { basename, dirname, extname, join, sep as getSep } from "@tauri-apps/api/path";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useTranslation } from "react-i18next";
+import { formatHMS } from "../extract-utils";
 import type { MkvTrack } from "../protocol";
+import { QueueItemStatus } from "../protocol";
 import { cancelExtract, enqueueExtract, getMkvTracks } from "../service";
 import { useMkvStore } from "../store";
 
@@ -265,14 +267,15 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
   );
   const entry = useMkvStore((s) => s.queueItems[path]);
   const addToQueue = useMkvStore((s) => s.addToQueue);
+  const markCancelRequested = useMkvStore((s) => s.markCancelRequested);
   const registerExtractHandler = useMkvStore((s) => s.registerExtractHandler);
   const unregisterExtractHandler = useMkvStore(
     (s) => s.unregisterExtractHandler,
   );
   const setFileHasSelection = useMkvStore((s) => s.setFileHasSelection);
 
-  const isExtracting = entry?.status === "extracting";
-  const isQueued = entry?.status === "queued";
+  const isExtracting = entry?.status === QueueItemStatus.Extracting;
+  const isQueued = entry?.status === QueueItemStatus.Waiting;
   const isActive = isExtracting || isQueued;
 
   const [tracks, setTracks] = useState<MkvTrack[]>([]);
@@ -377,6 +380,7 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
   };
 
   const handleCancel = async () => {
+    markCancelRequested(path);
     try {
       await cancelExtract(path);
     } catch (err) {
@@ -398,66 +402,19 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
     };
   }, [path, hasSelection, isActive, setFileHasSelection]);
 
-  const titleContent = isExtracting ? (
-    <Box
-      sx={{
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        minHeight: 32,
-        borderRadius: 1,
-        overflow: "hidden",
-      }}
-    >
-      <LinearProgress
-        variant="determinate"
-        value={entry?.progress ?? 0}
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100%",
-          height: "100%",
-          bgcolor: "action.hover",
-          "& .MuiLinearProgress-bar": {
-            bgcolor: "success.main",
-          },
-        }}
-      />
-      <Typography
-        variant="body2"
-        sx={{
-          position: "relative",
-          zIndex: 1,
-          px: 1,
-          wordBreak: "break-all",
-          width: "100%",
-        }}
-      >
-        {path}
-      </Typography>
-    </Box>
-  ) : (
+  const titleContent = (
     <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
       {path}
     </Typography>
   );
 
-  const actionContent = isActive ? (
-    <Tooltip title={t("extract.cancel")}>
-      <IconButton size="small" color="error" onClick={handleCancel}>
-        <CancelIcon fontSize="small" />
-      </IconButton>
-    </Tooltip>
-  ) : (
+  const actionContent = (
     <Box sx={{ display: "flex", gap: 0.5 }}>
       <Tooltip title={t("extract.copyCommand")}>
         <span>
           <IconButton
             size="small"
-            disabled={!hasSelection}
+            disabled={!hasSelection || isActive}
             onClick={handleCopyCommand}
           >
             <ContentCopyIcon fontSize="small" />
@@ -468,23 +425,36 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
         variant="outlined"
         size="small"
         startIcon={<ContentCutIcon />}
-        disabled={!hasSelection}
+        disabled={!hasSelection || isActive}
         onClick={handleExtract}
         sx={{ textTransform: "none", whiteSpace: "nowrap" }}
       >
         {t("extract.extract")}
       </Button>
       <Tooltip title={t("list.delete")}>
-        <IconButton
-          size="small"
-          color="error"
-          onClick={() => removeFile(path)}
-        >
-          <DeleteIcon fontSize="small" />
-        </IconButton>
+        <span>
+          <IconButton
+            size="small"
+            color="error"
+            disabled={isActive}
+            onClick={() => removeFile(path)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </span>
       </Tooltip>
     </Box>
   );
+
+  const progress = entry?.progress ?? 0;
+  const startedAt = entry?.extractionStartedAt ?? null;
+  const elapsedMs =
+    isExtracting && startedAt !== null ? Date.now() - startedAt : 0;
+  const elapsedStr = isExtracting ? formatHMS(elapsedMs) : "--:--:--";
+  const etaStr =
+    isExtracting && progress > 0 && progress < 100
+      ? formatHMS((elapsedMs * (100 - progress)) / progress)
+      : "--:--:--";
 
   return (
     <Card
@@ -498,10 +468,63 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
         title={titleContent}
         action={actionContent}
         sx={{
-          pb: 1,
+          pb: isActive ? 0 : 1,
           "& .MuiCardHeader-content": { minWidth: 0, flex: 1 },
         }}
       />
+      {isActive && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            px: 2,
+            pb: 1,
+            mt: 1,
+          }}
+        >
+          {isExtracting ? (
+            <>
+              <LinearProgress
+                variant="determinate"
+                value={progress}
+                sx={{
+                  flex: 1,
+                  height: 6,
+                  borderRadius: 1,
+                  bgcolor: "action.hover",
+                  "& .MuiLinearProgress-bar": {
+                    bgcolor: "success.main",
+                  },
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  fontFamily:
+                    "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+                  color: "text.secondary",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {elapsedStr} / {etaStr}
+              </Typography>
+            </>
+          ) : (
+            <Typography
+              variant="caption"
+              sx={{ flex: 1, color: "text.secondary" }}
+            >
+              {t("queue.status.waiting")}
+            </Typography>
+          )}
+          <Tooltip title={t("extract.cancel")}>
+            <IconButton size="small" color="error" onClick={handleCancel}>
+              <CancelIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
       <CardContent sx={{ pt: 0, "&.MuiCardContent-root:last-child": { pb: 2 } }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>

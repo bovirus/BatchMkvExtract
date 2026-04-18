@@ -55,3 +55,10 @@ pub struct ExtractEntry {
 pub struct ExtractSnapshot {
     pub entries: Vec<ExtractEntry>,
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ExtractionFinishedEvent {
+    pub file: String,
+    pub outcome: String,
+    pub error: Option<String>,
+}

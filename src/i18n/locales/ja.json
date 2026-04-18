@@ -53,9 +53,11 @@
       "eta": "残り時間"
     },
     "status": {
-      "queued": "待機中",
+      "waiting": "待機中",
       "extracting": "抽出中",
-      "completed": "完了"
+      "completed": "完了",
+      "cancelled": "キャンセル済み",
+      "failed": "失敗"
     }
   },
   "settings": {

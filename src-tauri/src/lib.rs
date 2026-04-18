@@ -105,6 +105,7 @@ pub fn run() {
         ])
         .setup(|app| {
             use tauri::Manager;
+            extract::init_app_handle(app.handle().clone());
             let window = app.get_webview_window("main").unwrap();
             window.set_title(&format!("BatchMkvExtract v{}", env!("CARGO_PKG_VERSION")))?;
 

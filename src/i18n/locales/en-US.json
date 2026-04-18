@@ -53,9 +53,11 @@
       "eta": "ETA"
     },
     "status": {
-      "queued": "Queued",
+      "waiting": "Waiting",
       "extracting": "Extracting",
-      "completed": "Completed"
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "failed": "Failed"
     }
   },
   "settings": {

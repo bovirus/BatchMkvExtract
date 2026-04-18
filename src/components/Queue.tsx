@@ -30,28 +30,36 @@ import {
   TableRow,
   Tooltip,
 } from "@mui/material";
+import CancelIcon from "@mui/icons-material/Cancel";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import { useTranslation } from "react-i18next";
 import { formatHMS } from "../extract-utils";
-import type { QueueItem, QueueItemStatus } from "../store";
-import { useMkvStore } from "../store";
+import type { QueueItem } from "../store";
+import { QueueItemStatus, useMkvStore } from "../store";
+import { cancelExtract } from "../service";
 
 const TICK_INTERVAL_MS = 200;
 
 function statusColor(status: QueueItemStatus): string {
   switch (status) {
-    case "extracting":
+    case QueueItemStatus.Extracting:
       return "success.main";
-    case "completed":
+    case QueueItemStatus.Completed:
       return "text.secondary";
-    case "queued":
+    case QueueItemStatus.Cancelled:
+    case QueueItemStatus.Failed:
+      return "error.main";
+    case QueueItemStatus.Waiting:
     default:
       return "text.primary";
   }
 }
 
 function elapsed(item: QueueItem, now: number): string {
-  if (item.status === "queued" || item.extractionStartedAt === null) {
+  if (
+    item.status === QueueItemStatus.Waiting ||
+    item.extractionStartedAt === null
+  ) {
     return "--:--:--";
   }
   const end = item.extractionEndedAt ?? now;
@@ -60,7 +68,7 @@ function elapsed(item: QueueItem, now: number): string {
 
 function eta(item: QueueItem, now: number): string {
   if (
-    item.status !== "extracting" ||
+    item.status !== QueueItemStatus.Extracting ||
     item.extractionStartedAt === null ||
     item.progress <= 0 ||
     item.progress >= 100
@@ -84,6 +92,16 @@ export default function Queue() {
   const queueItems = useMkvStore((s) => s.queueItems);
   const queueOrder = useMkvStore((s) => s.queueOrder);
   const clearCompletedInDrive = useMkvStore((s) => s.clearCompletedInDrive);
+  const markCancelRequested = useMkvStore((s) => s.markCancelRequested);
+
+  const handleCancel = async (file: string) => {
+    markCancelRequested(file);
+    try {
+      await cancelExtract(file);
+    } catch (err) {
+      console.error("Failed to cancel extraction", err);
+    }
+  };
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -103,12 +121,18 @@ export default function Queue() {
     return Array.from(byDrive.entries());
   }, [queueItems, queueOrder]);
 
-  const statusLabel = (status: QueueItemStatus) => t(`queue.status.${status}`);
+  const statusLabel = (status: QueueItemStatus) =>
+    t(`queue.status.${status.toLowerCase()}`);
 
   return (
     <Stack spacing={2} sx={{ p: 1 }}>
       {groups.map(([drive, items]) => {
-        const hasCompleted = items.some((i) => i.status === "completed");
+        const hasCompleted = items.some(
+          (i) =>
+            i.status === QueueItemStatus.Completed ||
+            i.status === QueueItemStatus.Cancelled ||
+            i.status === QueueItemStatus.Failed,
+        );
         return (
         <Card variant="outlined" key={drive}>
           <CardHeader
@@ -138,6 +162,7 @@ export default function Queue() {
                     <TableCell>{t("queue.header.end")}</TableCell>
                     <TableCell>{t("queue.header.elapsed")}</TableCell>
                     <TableCell>{t("queue.header.eta")}</TableCell>
+                    <TableCell padding="checkbox" />
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -148,7 +173,7 @@ export default function Queue() {
                       </TableCell>
                       <TableCell sx={{ color: statusColor(item.status) }}>
                         {statusLabel(item.status)}
-                        {item.status === "extracting"
+                        {item.status === QueueItemStatus.Extracting
                           ? ` ${item.progress}%`
                           : ""}
                       </TableCell>
@@ -160,6 +185,19 @@ export default function Queue() {
                       </TableCell>
                       <TableCell>{elapsed(item, now)}</TableCell>
                       <TableCell>{eta(item, now)}</TableCell>
+                      <TableCell padding="checkbox">
+                        {item.status === QueueItemStatus.Extracting && (
+                          <Tooltip title={t("extract.cancel")}>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleCancel(item.file)}
+                            >
+                              <CancelIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

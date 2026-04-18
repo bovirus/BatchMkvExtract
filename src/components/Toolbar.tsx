@@ -36,12 +36,14 @@ export default function Toolbar() {
   const fileHasSelection = useMkvStore((s) => s.fileHasSelection);
   const canExtractAll = files.some((f) => fileHasSelection[f]);
 
-  const runExtractAll = useCallback(() => {
+  const runExtractAll = useCallback(async () => {
     const state = useMkvStore.getState();
     for (const file of state.files) {
       if (!state.fileHasSelection[file]) continue;
       const handler = state.fileExtractHandlers[file];
-      handler?.();
+      if (handler) {
+        await handler();
+      }
     }
   }, []);
 
