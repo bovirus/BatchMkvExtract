@@ -8,6 +8,7 @@
   "extract": {
     "copyCommand": "Befehl kopieren",
     "extract": "Extrahieren",
+    "cancel": "Abbrechen",
     "commandCopied": "Befehl in die Zwischenablage kopiert.",
     "extractionComplete": "Extraktion abgeschlossen.",
     "noTracks": "Keine Spuren gefunden.",

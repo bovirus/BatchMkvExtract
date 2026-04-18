@@ -8,6 +8,7 @@
   "extract": {
     "copyCommand": "Copiar comando",
     "extract": "Extraer",
+    "cancel": "Cancelar",
     "commandCopied": "Comando copiado al portapapeles.",
     "extractionComplete": "Extracción completada.",
     "noTracks": "No se encontraron pistas.",

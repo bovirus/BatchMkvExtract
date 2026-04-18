@@ -26,6 +26,7 @@ import {
   Checkbox,
   CircularProgress,
   IconButton,
+  LinearProgress,
   Snackbar,
   Table,
   TableBody,
@@ -36,6 +37,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import CancelIcon from "@mui/icons-material/Cancel";
 import ClosedCaptionIcon from "@mui/icons-material/ClosedCaption";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ContentCutIcon from "@mui/icons-material/ContentCut";
@@ -49,7 +51,7 @@ import { basename, dirname, extname, join, sep as getSep } from "@tauri-apps/api
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useTranslation } from "react-i18next";
 import type { MkvTrack } from "../protocol";
-import { getMkvTracks, runMkvextract } from "../service";
+import { cancelExtract, enqueueExtract, getMkvTracks } from "../service";
 import { useMkvStore } from "../store";
 
 interface MkvFileCardProps {
@@ -261,12 +263,16 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
   const mkvToolNixPath = useMkvStore(
     (s) => s.config?.mkv?.mkvToolNixPath ?? "",
   );
+  const entry = useMkvStore((s) => s.extractionByFile[path]);
+
+  const isExtracting = entry?.status === "extracting";
+  const isQueued = entry?.status === "queued";
+  const isActive = isExtracting || isQueued;
 
   const [tracks, setTracks] = useState<MkvTrack[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [extracting, setExtracting] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     message: string;
     severity: "success" | "error";
@@ -353,83 +359,125 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
   };
 
   const handleExtract = async () => {
-    if (!hasSelection || extracting) return;
-    setExtracting(true);
+    if (!hasSelection || isActive) return;
     try {
       const outputDir = await dirname(path);
       const args = await buildExtractArgs(path, outputDir, selectedTracks);
-      await runMkvextract(path, args);
-      setSnackbar({
-        message: t("extract.extractionComplete"),
-        severity: "success",
-      });
+      await enqueueExtract(path, args);
     } catch (err) {
-      const msg = String(err);
-      if (msg.includes("MKVEXTRACT_NOT_AVAILABLE:")) {
-        setSnackbar({
-          message: t("extract.error.mkvextractNotAvailable", {
-            detail: msg.split("MKVEXTRACT_NOT_AVAILABLE:")[1],
-          }),
-          severity: "error",
-        });
-      } else if (msg.includes("MKVEXTRACT_FAILED:")) {
-        setSnackbar({
-          message: t("extract.error.mkvextractFailed", {
-            detail: msg.split("MKVEXTRACT_FAILED:")[1],
-          }),
-          severity: "error",
-        });
-      } else {
-        setSnackbar({ message: msg, severity: "error" });
-      }
-    } finally {
-      setExtracting(false);
+      setSnackbar({ message: String(err), severity: "error" });
     }
   };
+
+  const handleCancel = async () => {
+    try {
+      await cancelExtract(path);
+    } catch (err) {
+      setSnackbar({ message: String(err), severity: "error" });
+    }
+  };
+
+  const progressValue = isExtracting ? entry?.progress ?? 0 : 100;
+  const progressBarColor = isExtracting ? "success.main" : "grey.500";
+
+  const titleContent = isActive ? (
+    <Box
+      sx={{
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        minHeight: 32,
+        borderRadius: 1,
+        overflow: "hidden",
+      }}
+    >
+      <LinearProgress
+        variant="determinate"
+        value={progressValue}
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100%",
+          height: "100%",
+          bgcolor: "action.hover",
+          "& .MuiLinearProgress-bar": {
+            bgcolor: progressBarColor,
+            transition: isExtracting ? undefined : "none",
+          },
+        }}
+      />
+      <Typography
+        variant="body2"
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          px: 1,
+          wordBreak: "break-all",
+          width: "100%",
+        }}
+      >
+        {path}
+      </Typography>
+    </Box>
+  ) : (
+    <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
+      {path}
+    </Typography>
+  );
+
+  const actionContent = isActive ? (
+    <Tooltip title={t("extract.cancel")}>
+      <IconButton size="small" color="error" onClick={handleCancel}>
+        <CancelIcon fontSize="small" />
+      </IconButton>
+    </Tooltip>
+  ) : (
+    <Box sx={{ display: "flex", gap: 0.5 }}>
+      <Tooltip title={t("extract.copyCommand")}>
+        <span>
+          <IconButton
+            size="small"
+            disabled={!hasSelection}
+            onClick={handleCopyCommand}
+          >
+            <ContentCopyIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<ContentCutIcon />}
+        disabled={!hasSelection}
+        onClick={handleExtract}
+        sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+      >
+        {t("extract.extract")}
+      </Button>
+      <Tooltip title={t("list.delete")}>
+        <IconButton
+          size="small"
+          color="error"
+          onClick={() => removeFile(path)}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
 
   return (
     <Card variant="outlined" sx={{ mt: 1 }}>
       <CardHeader
-        title={
-          <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
-            {path}
-          </Typography>
-        }
-        action={
-          <Box sx={{ display: "flex", gap: 0.5 }}>
-            <Tooltip title={t("extract.copyCommand")}>
-              <span>
-                <IconButton
-                  size="small"
-                  disabled={!hasSelection}
-                  onClick={handleCopyCommand}
-                >
-                  <ContentCopyIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ContentCutIcon />}
-              disabled={!hasSelection || extracting}
-              onClick={handleExtract}
-              sx={{ textTransform: "none", whiteSpace: "nowrap" }}
-            >
-              {t("extract.extract")}
-            </Button>
-            <Tooltip title={t("list.delete")}>
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => removeFile(path)}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        }
-        sx={{ pb: 1 }}
+        title={titleContent}
+        action={actionContent}
+        sx={{
+          pb: 1,
+          "& .MuiCardHeader-content": { minWidth: 0, flex: 1 },
+        }}
       />
       <CardContent sx={{ pt: 0, "&.MuiCardContent-root:last-child": { pb: 2 } }}>
         {loading ? (
@@ -452,6 +500,7 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
                   <TableCell padding="checkbox">
                     <Checkbox
                       size="small"
+                      disabled={isActive}
                       checked={
                         tracks.length > 0 &&
                         selectedIds.size === tracks.length
@@ -477,6 +526,7 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
                     <TableCell padding="checkbox">
                       <Checkbox
                         size="small"
+                        disabled={isActive}
                         checked={selectedIds.has(track.id)}
                         onChange={(e) => toggleOne(track.id, e.target.checked)}
                       />

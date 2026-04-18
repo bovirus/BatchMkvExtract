@@ -16,7 +16,13 @@
  */
 
 import { invoke } from "@tauri-apps/api/core";
-import type { About, Config, MkvTrack, MkvextractStatus } from "./protocol";
+import type {
+  About,
+  Config,
+  ExtractSnapshot,
+  MkvTrack,
+  MkvextractStatus,
+} from "./protocol";
 
 export async function getAbout(): Promise<About> {
   return await invoke<About>("get_about");
@@ -44,9 +50,17 @@ export async function getMkvTracks(file: string): Promise<MkvTrack[]> {
   return await invoke<MkvTrack[]>("get_mkv_tracks", { file });
 }
 
-export async function runMkvextract(
+export async function enqueueExtract(
   file: string,
   args: string[],
 ): Promise<void> {
-  return await invoke<void>("run_mkvextract", { file, args });
+  return await invoke<void>("enqueue_extract", { file, args });
+}
+
+export async function cancelExtract(file: string): Promise<void> {
+  return await invoke<void>("cancel_extract", { file });
+}
+
+export async function getExtractStatus(): Promise<ExtractSnapshot> {
+  return await invoke<ExtractSnapshot>("get_extract_status");
 }

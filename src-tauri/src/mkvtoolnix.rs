@@ -20,10 +20,55 @@ use anyhow::Result;
 use std::cmp::Ordering;
 #[cfg(target_os = "macos")]
 use std::fs;
+use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 
 use crate::config;
 use crate::protocol::{MkvTrack, MkvextractStatus};
+
+pub(crate) fn parse_mkvextract_progress(line: &str) -> Option<u32> {
+    let trimmed = line.trim();
+    if trimmed.starts_with("Progress:") {
+        trimmed
+            .trim_start_matches("Progress:")
+            .trim()
+            .trim_end_matches('%')
+            .parse::<u32>()
+            .ok()
+    } else {
+        None
+    }
+}
+
+pub(crate) fn read_mkvextract_output<F>(reader: impl Read, mut on_line: F)
+where
+    F: FnMut(&str),
+{
+    let mut buf_reader = BufReader::new(reader);
+    let mut current_line = Vec::new();
+    let mut byte = [0u8; 1];
+    loop {
+        match buf_reader.read(&mut byte) {
+            Ok(0) => break,
+            Ok(_) => {
+                if byte[0] == b'\r' || byte[0] == b'\n' {
+                    if !current_line.is_empty() {
+                        let line = String::from_utf8_lossy(&current_line);
+                        on_line(&line);
+                        current_line.clear();
+                    }
+                } else {
+                    current_line.push(byte[0]);
+                }
+            }
+            Err(_) => break,
+        }
+    }
+    if !current_line.is_empty() {
+        let line = String::from_utf8_lossy(&current_line);
+        on_line(&line);
+    }
+}
 
 struct MkvToolNixResolution {
     path: PathBuf,
@@ -223,32 +268,31 @@ pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
     Ok(tracks)
 }
 
-pub async fn run_mkvextract(file: String, args: Vec<String>) -> Result<()> {
-    let path = Path::new(file.as_str());
+pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Child> {
+    let path = Path::new(file);
     validate_path_as_file(path)?;
     let cfg = config::get_config();
     let resolution = resolve_mkvtoolnix(&cfg.mkv.mkv_toolnix_path, "mkvextract");
     persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
     let mkvextract_path = get_tool_path(&resolution.path, "mkvextract");
     let mut cmd = std::process::Command::new(&mkvextract_path);
-    cmd.arg(&file).arg("tracks").args(&args);
+    cmd.arg(file)
+        .arg("tracks")
+        .args(args)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
-    let output = cmd.output().map_err(|e| {
+    cmd.spawn().map_err(|e| {
         anyhow::anyhow!(
             "MKVEXTRACT_NOT_AVAILABLE:{}: {}",
             mkvextract_path.display(),
             e
         )
-    })?;
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow::anyhow!("MKVEXTRACT_FAILED:{}", stderr));
-    }
-    Ok(())
+    })
 }
 
 pub async fn is_mkvextract_found(path: String) -> Result<MkvextractStatus> {

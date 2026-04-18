@@ -18,6 +18,7 @@
 mod config;
 mod constants;
 mod controller;
+mod extract;
 mod mkvtoolnix;
 mod protocol;
 
@@ -59,10 +60,18 @@ async fn is_mkvextract_found(path: String) -> Result<protocol::MkvextractStatus,
 }
 
 #[tauri::command]
-async fn run_mkvextract(file: String, args: Vec<String>) -> Result<(), String> {
-    mkvtoolnix::run_mkvextract(file, args)
-        .await
-        .map_err(convert_error)
+async fn enqueue_extract(file: String, args: Vec<String>) -> Result<(), String> {
+    extract::enqueue(file, args).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn cancel_extract(file: String) -> Result<(), String> {
+    extract::cancel(file).map_err(convert_error)
+}
+
+#[tauri::command]
+async fn get_extract_status() -> Result<protocol::ExtractSnapshot, String> {
+    Ok(extract::snapshot())
 }
 
 #[tauri::command]
@@ -84,12 +93,14 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            cancel_extract,
+            enqueue_extract,
             get_about,
             get_config,
+            get_extract_status,
             get_mkv_files,
             get_mkv_tracks,
             is_mkvextract_found,
-            run_mkvextract,
             set_config
         ])
         .setup(|app| {

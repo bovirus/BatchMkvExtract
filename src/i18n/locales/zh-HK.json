@@ -8,6 +8,7 @@
   "extract": {
     "copyCommand": "複製指令",
     "extract": "擷取",
+    "cancel": "取消",
     "commandCopied": "指令已複製到剪貼簿。",
     "extractionComplete": "擷取完成。",
     "noTracks": "找不到軌道。",

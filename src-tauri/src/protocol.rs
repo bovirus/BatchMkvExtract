@@ -43,3 +43,15 @@ pub struct MkvTrack {
     pub track_name: String,
     pub language: String,
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExtractEntry {
+    pub file: String,
+    pub status: String,
+    pub progress: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ExtractSnapshot {
+    pub entries: Vec<ExtractEntry>,
+}

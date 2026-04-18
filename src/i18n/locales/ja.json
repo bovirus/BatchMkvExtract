@@ -8,6 +8,7 @@
   "extract": {
     "copyCommand": "コマンドをコピー",
     "extract": "抽出",
+    "cancel": "キャンセル",
     "commandCopied": "コマンドをクリップボードにコピーしました。",
     "extractionComplete": "抽出が完了しました。",
     "noTracks": "トラックが見つかりません。",

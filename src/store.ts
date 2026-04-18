@@ -16,7 +16,7 @@
  */
 
 import { create } from "zustand";
-import type { About, Config } from "./protocol";
+import type { About, Config, ExtractEntry } from "./protocol";
 import { getAbout, getConfig, setConfig } from "./service";
 
 export type TabType = "fileList" | "settings" | "about";
@@ -28,6 +28,7 @@ interface MkvStore {
   showAbout: boolean;
   about: About | null;
   config: Config | null;
+  extractionByFile: Record<string, ExtractEntry>;
   addFiles: (paths: string[]) => void;
   removeFile: (path: string) => void;
   clearFiles: () => void;
@@ -39,6 +40,7 @@ interface MkvStore {
   initAbout: () => Promise<void>;
   initConfig: () => Promise<void>;
   updateConfig: (patch: Partial<Config>) => Promise<void>;
+  setExtractionEntries: (entries: ExtractEntry[]) => void;
 }
 
 export const useMkvStore = create<MkvStore>((set, get) => ({
@@ -48,6 +50,7 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
   showAbout: false,
   about: null,
   config: null,
+  extractionByFile: {},
   addFiles: (paths) =>
     set((state) => {
       const existing = new Set(state.files);
@@ -97,5 +100,12 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
     } catch (err) {
       console.error("Failed to save config", err);
     }
+  },
+  setExtractionEntries: (entries) => {
+    const map: Record<string, ExtractEntry> = {};
+    for (const entry of entries) {
+      map[entry.file] = entry;
+    }
+    set({ extractionByFile: map });
   },
 }));

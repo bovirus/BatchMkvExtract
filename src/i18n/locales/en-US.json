@@ -8,6 +8,7 @@
   "extract": {
     "copyCommand": "Copy Command",
     "extract": "Extract",
+    "cancel": "Cancel",
     "commandCopied": "Command copied to clipboard.",
     "extractionComplete": "Extraction complete.",
     "noTracks": "No tracks found.",

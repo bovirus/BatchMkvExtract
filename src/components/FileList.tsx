@@ -20,13 +20,39 @@ import { Box, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useTranslation } from "react-i18next";
+import { getExtractStatus } from "../service";
 import { useMkvStore } from "../store";
 import { MkvFileCard } from "./MkvFileCard";
+
+const EXTRACT_POLL_INTERVAL_MS = 200;
 
 export default function FileList() {
   const { t } = useTranslation();
   const files = useMkvStore((s) => s.files);
   const addFiles = useMkvStore((s) => s.addFiles);
+  const setExtractionEntries = useMkvStore((s) => s.setExtractionEntries);
+
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const snap = await getExtractStatus();
+        if (!cancelled) {
+          setExtractionEntries(snap.entries);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to fetch extract status", err);
+        }
+      }
+    };
+    poll();
+    const id = setInterval(poll, EXTRACT_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [setExtractionEntries]);
 
   useEffect(() => {
     const unlistenPromise = getCurrentWebviewWindow().onDragDropEvent(

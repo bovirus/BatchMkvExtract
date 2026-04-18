@@ -104,6 +104,18 @@ export interface MkvTrack {
   language: string;
 }
 
+export type ExtractStatus = "queued" | "extracting";
+
+export interface ExtractEntry {
+  file: string;
+  status: ExtractStatus;
+  progress: number;
+}
+
+export interface ExtractSnapshot {
+  entries: ExtractEntry[];
+}
+
 export function getDisplayModes(): DisplayMode[] {
   return [DisplayMode.Auto, DisplayMode.Light, DisplayMode.Dark];
 }
