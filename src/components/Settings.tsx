@@ -448,7 +448,11 @@ export default function Settings() {
                     await addProfile(trimmed);
                     setNewProfileName("");
                   }}
-                  sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                  sx={{
+                    height: 36,
+                    textTransform: "none",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   {t("settings.addProfile")}
                 </Button>
@@ -458,7 +462,11 @@ export default function Settings() {
                   color="error"
                   disabled={!canDelete}
                   onClick={() => deleteActiveProfile()}
-                  sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                  sx={{
+                    height: 36,
+                    textTransform: "none",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   {t("settings.deleteProfile")}
                 </Button>
