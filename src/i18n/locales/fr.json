@@ -103,5 +103,9 @@
   "footer": {
     "donate": "Faire un don pour soutenir le développement",
     "copyright": "© Copyright 2026"
+  },
+  "notification": {
+    "completedIn": "Terminé en {{elapsed}}",
+    "unknownError": "Erreur inconnue"
   }
 }

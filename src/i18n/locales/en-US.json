@@ -103,5 +103,9 @@
   "footer": {
     "donate": "Donate to Support the Development",
     "copyright": "© Copyright 2026"
+  },
+  "notification": {
+    "completedIn": "Completed in {{elapsed}}",
+    "unknownError": "Unknown error"
   }
 }

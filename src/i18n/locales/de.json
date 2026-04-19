@@ -103,5 +103,9 @@
   "footer": {
     "donate": "Spenden zur Unterstützung der Entwicklung",
     "copyright": "© Copyright 2026"
+  },
+  "notification": {
+    "completedIn": "Abgeschlossen in {{elapsed}}",
+    "unknownError": "Unbekannter Fehler"
   }
 }

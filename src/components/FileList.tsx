@@ -21,8 +21,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useTranslation } from "react-i18next";
-import { getParentDir } from "../extract-utils";
+import { formatHMS, getParentDir } from "../extract-utils";
 import type { ExtractionFinishedEvent } from "../protocol";
+import { QueueItemStatus } from "../protocol";
 import { getExtractStatus } from "../service";
 import { useMkvStore } from "../store";
 import { GroupCard } from "./GroupCard";
@@ -40,6 +41,7 @@ export default function FileList() {
   const addFiles = useMkvStore((s) => s.addFiles);
   const applyExtractSnapshot = useMkvStore((s) => s.applyExtractSnapshot);
   const recordFinishedOutcome = useMkvStore((s) => s.recordFinishedOutcome);
+  const showNotification = useMkvStore((s) => s.showNotification);
   const groupByFile = useMkvStore((s) => s.groupByFile);
   const fileTrackCounts = useMkvStore((s) => s.fileTrackCounts);
 
@@ -109,13 +111,29 @@ export default function FileList() {
       "extraction-finished",
       (event) => {
         const { file, outcome, error } = event.payload;
+        const existing = useMkvStore.getState().queueItems[file];
+        const startedAt = existing?.extractionStartedAt ?? null;
         recordFinishedOutcome(file, outcome, error);
+        if (outcome === QueueItemStatus.Completed) {
+          const elapsedMs = startedAt !== null ? Date.now() - startedAt : 0;
+          showNotification(
+            "success",
+            file,
+            t("notification.completedIn", { elapsed: formatHMS(elapsedMs) }),
+          );
+        } else if (outcome === QueueItemStatus.Failed) {
+          showNotification(
+            "error",
+            file,
+            error ?? t("notification.unknownError"),
+          );
+        }
       },
     );
     return () => {
       unlistenPromise.then((fn) => fn());
     };
-  }, [recordFinishedOutcome]);
+  }, [recordFinishedOutcome, showNotification, t]);
 
   useEffect(() => {
     const unlistenPromise = getCurrentWebviewWindow().onDragDropEvent(

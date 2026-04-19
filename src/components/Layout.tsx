@@ -18,6 +18,7 @@
 import { Box } from "@mui/material";
 import Footer from "./Footer";
 import MainContent from "./MainContent";
+import { NotificationToast } from "./NotificationToast";
 import Toolbar from "./Toolbar";
 
 export default function Layout() {
@@ -47,6 +48,7 @@ export default function Layout() {
       <footer>
         <Footer />
       </footer>
+      <NotificationToast />
     </Box>
   );
 }

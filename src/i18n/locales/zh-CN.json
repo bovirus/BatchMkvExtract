@@ -103,5 +103,9 @@
   "footer": {
     "donate": "捐赠以支持开发",
     "copyright": "© 版权所有 2026"
+  },
+  "notification": {
+    "completedIn": "{{elapsed}} 内完成",
+    "unknownError": "未知错误"
   }
 }

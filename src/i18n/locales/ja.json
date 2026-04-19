@@ -103,5 +103,9 @@
   "footer": {
     "donate": "開発を支援するために寄付する",
     "copyright": "© Copyright 2026"
+  },
+  "notification": {
+    "completedIn": "{{elapsed}} で完了しました",
+    "unknownError": "不明なエラー"
   }
 }

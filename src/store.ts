@@ -60,6 +60,15 @@ export interface QueueItem {
   error: string | null;
 }
 
+export type NotificationKind = "success" | "error";
+
+export interface Notification {
+  id: number;
+  kind: NotificationKind;
+  file: string;
+  detail: string;
+}
+
 interface MkvStore {
   files: string[];
   activeTab: TabType;
@@ -73,6 +82,7 @@ interface MkvStore {
   fileTrackCounts: Record<string, TrackCounts>;
   fileSelectedIds: Record<string, number[]>;
   groupByFile: boolean;
+  notification: Notification | null;
   addFiles: (paths: string[]) => void;
   removeFile: (path: string) => void;
   clearFiles: () => void;
@@ -104,6 +114,8 @@ interface MkvStore {
   setFileSelectedIds: (file: string, ids: number[]) => void;
   setGroupSelectedIds: (files: string[], ids: number[]) => void;
   setGroupByFile: (value: boolean) => void;
+  showNotification: (kind: NotificationKind, file: string, detail: string) => void;
+  dismissNotification: () => void;
 }
 
 export const useMkvStore = create<MkvStore>((set, get) => ({
@@ -119,6 +131,7 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
   fileTrackCounts: {},
   fileSelectedIds: {},
   groupByFile: false,
+  notification: null,
   addFiles: (paths) =>
     set((state) => {
       const existing = new Set(state.files);
@@ -460,4 +473,14 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
       return { fileSelectedIds: next };
     }),
   setGroupByFile: (value) => set({ groupByFile: value }),
+  showNotification: (kind, file, detail) =>
+    set((state) => ({
+      notification: {
+        id: (state.notification?.id ?? 0) + 1,
+        kind,
+        file,
+        detail,
+      },
+    })),
+  dismissNotification: () => set({ notification: null }),
 }));
