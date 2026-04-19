@@ -605,8 +605,26 @@ export function GroupCard({ files }: GroupCardProps) {
                 </TableHead>
                 <TableBody>
                   {tracks.map((track) => (
-                    <TableRow key={track.id}>
-                      <TableCell padding="checkbox">
+                    <TableRow
+                      key={track.id}
+                      hover
+                      sx={{
+                        cursor: hasActiveInGroup ? "default" : "pointer",
+                      }}
+                      onClick={() => {
+                        if (hasActiveInGroup) {
+                          return;
+                        }
+                        toggleOne(
+                          trackKey(track),
+                          !selectedIds.has(trackKey(track)),
+                        );
+                      }}
+                    >
+                      <TableCell
+                        padding="checkbox"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Checkbox
                           size="small"
                           disabled={hasActiveInGroup}

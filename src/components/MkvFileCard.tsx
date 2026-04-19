@@ -553,8 +553,24 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
               </TableHead>
               <TableBody>
                 {tracks.map((track) => (
-                  <TableRow key={track.id}>
-                    <TableCell padding="checkbox">
+                  <TableRow
+                    key={track.id}
+                    hover
+                    sx={{ cursor: isActive ? "default" : "pointer" }}
+                    onClick={() => {
+                      if (isActive) {
+                        return;
+                      }
+                      toggleOne(
+                        trackKey(track),
+                        !selectedIds.has(trackKey(track)),
+                      );
+                    }}
+                  >
+                    <TableCell
+                      padding="checkbox"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         size="small"
                         disabled={isActive}
