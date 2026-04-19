@@ -43,6 +43,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import AttachmentIcon from "@mui/icons-material/Attachment";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ClosedCaptionIcon from "@mui/icons-material/ClosedCaption";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -53,6 +54,7 @@ import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import ImageIcon from "@mui/icons-material/Image";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import SmartButtonIcon from "@mui/icons-material/SmartButton";
+import TocIcon from "@mui/icons-material/Toc";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import { dirname } from "@tauri-apps/api/path";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
@@ -63,6 +65,7 @@ import {
   buildExtractArgs,
   formatHMS,
   shouldSelectTrackType,
+  trackKey,
 } from "../extract-utils";
 import { QueueItemStatus } from "../protocol";
 import {
@@ -110,6 +113,18 @@ function TrackTypeIcon({ type }: { type: string }) {
       return (
         <Tooltip title="images">
           <ImageIcon sx={sx} />
+        </Tooltip>
+      );
+    case "chapters":
+      return (
+        <Tooltip title="chapters">
+          <TocIcon sx={sx} />
+        </Tooltip>
+      );
+    case "attachment":
+      return (
+        <Tooltip title="attachment">
+          <AttachmentIcon sx={sx} />
         </Tooltip>
       );
     default:
@@ -160,7 +175,7 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
   const [error, setError] = useState<string | null>(null);
   const tracks = cachedTracks ?? [];
   const selectedIds = useMemo(
-    () => new Set<number>(storedSelectedIds ?? []),
+    () => new Set<string>(storedSelectedIds ?? []),
     [storedSelectedIds],
   );
   const [snackbar, setSnackbar] = useState<{
@@ -180,10 +195,10 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
     if (tracks.length === 0 || !activeProfile) {
       return;
     }
-    const auto: number[] = [];
+    const auto: string[] = [];
     for (const track of tracks) {
       if (shouldSelectTrackType(activeProfile, track.type)) {
-        auto.push(track.id);
+        auto.push(trackKey(track));
       }
     }
     setFileSelectedIds(path, auto);
@@ -252,18 +267,23 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
     };
   }, [path, t, setFileTracks, setFileTrackCounts]);
 
-  const selectedTracks = tracks.filter((track) => selectedIds.has(track.id));
+  const selectedTracks = tracks.filter((track) =>
+    selectedIds.has(trackKey(track)),
+  );
   const hasSelection = selectedTracks.length > 0;
 
   const toggleAll = (checked: boolean) => {
-    setFileSelectedIds(path, checked ? tracks.map((t) => t.id) : []);
+    setFileSelectedIds(
+      path,
+      checked ? tracks.map((t) => trackKey(t)) : [],
+    );
   };
 
-  const toggleOne = (id: number, checked: boolean) => {
+  const toggleOne = (key: string, checked: boolean) => {
     const current = storedSelectedIds ?? [];
     const next = checked
-      ? [...current, id]
-      : current.filter((v) => v !== id);
+      ? [...current, key]
+      : current.filter((v) => v !== key);
     setFileSelectedIds(path, next);
   };
 
@@ -605,8 +625,10 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
                       <Checkbox
                         size="small"
                         disabled={isActive}
-                        checked={selectedIds.has(track.id)}
-                        onChange={(e) => toggleOne(track.id, e.target.checked)}
+                        checked={selectedIds.has(trackKey(track))}
+                        onChange={(e) =>
+                          toggleOne(trackKey(track), e.target.checked)
+                        }
                       />
                     </TableCell>
                     <TableCell>{track.id}</TableCell>

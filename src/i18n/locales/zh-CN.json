@@ -97,6 +97,8 @@
     "video": "视频",
     "audio": "音频",
     "subtitles": "字幕",
+    "chapters": "章节",
+    "attachments": "附件",
     "autoSelectOnDrop": "添加文件时自动选择",
     "defaultGroupMode": "默认分组模式",
     "templatePlaceholdersHint": "占位符: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",

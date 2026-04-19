@@ -92,6 +92,10 @@ export function renderTemplate(
   return out;
 }
 
+export function trackKey(track: MkvTrack): string {
+  return `${track.type}:${track.id}`;
+}
+
 export function pickTemplateForTrackType(
   profile: ConfigProfile,
   trackType: string,
@@ -103,6 +107,10 @@ export function pickTemplateForTrackType(
       return profile.audioTemplate;
     case "subtitles":
       return profile.subtitleTemplate;
+    case "chapters":
+      return profile.chaptersTemplate;
+    case "attachment":
+      return profile.attachmentsTemplate;
     default:
       return profile.videoTemplate;
   }
@@ -119,8 +127,27 @@ export function shouldSelectTrackType(
       return profile.selectAudio;
     case "subtitles":
       return profile.selectSubtitle;
+    case "chapters":
+      return profile.selectChapters;
+    case "attachment":
+      return profile.selectAttachments;
     default:
       return false;
+  }
+}
+
+function attachmentExtension(codec: string): string {
+  const lower = codec.toLowerCase();
+  switch (lower) {
+    case "jpeg":
+      return "jpg";
+    case "x-truetype-font":
+      return "ttf";
+    case "x-opentype-font":
+    case "font-sfnt":
+      return "otf";
+    default:
+      return lower || "bin";
   }
 }
 
@@ -258,6 +285,10 @@ export function getTrackExtension(codecId: string, trackType: string): string {
       return "bin";
     case "subtitles":
       return "srt";
+    case "chapters":
+      return "xml";
+    case "attachment":
+      return attachmentExtension(codecId);
     default:
       return "bin";
   }
@@ -286,6 +317,36 @@ export function buildOutputFileName(
   return `${base}.${ext}`;
 }
 
+interface ModeSegments {
+  tracks: string[];
+  chapters: string[];
+  attachments: string[];
+}
+
+async function buildModeSegments(
+  outputDir: string,
+  fileNameWithoutExt: string,
+  tracks: MkvTrack[],
+  profile: ConfigProfile,
+  quote: (s: string) => string,
+): Promise<ModeSegments> {
+  const result: ModeSegments = { tracks: [], chapters: [], attachments: [] };
+  for (const track of tracks) {
+    const outFile = await join(
+      outputDir,
+      buildOutputFileName(fileNameWithoutExt, track, profile),
+    );
+    if (track.type === "chapters") {
+      result.chapters.push(quote(outFile));
+    } else if (track.type === "attachment") {
+      result.attachments.push(`${track.id}:${quote(outFile)}`);
+    } else {
+      result.tracks.push(`${track.id}:${quote(outFile)}`);
+    }
+  }
+  return result;
+}
+
 export async function buildExtractArgs(
   file: string,
   outputDir: string,
@@ -293,13 +354,25 @@ export async function buildExtractArgs(
   profile: ConfigProfile,
 ): Promise<string[]> {
   const fileNameWithoutExt = await getFileNameWithoutExt(file);
+  const segments = await buildModeSegments(
+    outputDir,
+    fileNameWithoutExt,
+    tracks,
+    profile,
+    (s) => s,
+  );
   const results: string[] = [];
-  for (const track of tracks) {
-    const outFile = await join(
-      outputDir,
-      buildOutputFileName(fileNameWithoutExt, track, profile),
-    );
-    results.push(`${track.id}:${outFile}`);
+  if (segments.tracks.length > 0) {
+    results.push("tracks");
+    results.push(...segments.tracks);
+  }
+  if (segments.chapters.length > 0) {
+    results.push("chapters");
+    results.push(segments.chapters[0]);
+  }
+  if (segments.attachments.length > 0) {
+    results.push("attachments");
+    results.push(...segments.attachments);
   }
   return results;
 }
@@ -314,15 +387,25 @@ export async function buildCommandString(
   const sep = getSep();
   const mkvextractPath = `${mkvToolNixPath}${sep}mkvextract`;
   const fileNameWithoutExt = await getFileNameWithoutExt(file);
-  const args: string[] = [];
-  for (const track of tracks) {
-    const outFile = await join(
-      outputDir,
-      buildOutputFileName(fileNameWithoutExt, track, profile),
-    );
-    args.push(`${track.id}:"${outFile}"`);
+  const quote = (s: string) => `"${s}"`;
+  const segments = await buildModeSegments(
+    outputDir,
+    fileNameWithoutExt,
+    tracks,
+    profile,
+    quote,
+  );
+  const parts: string[] = [];
+  if (segments.tracks.length > 0) {
+    parts.push("tracks", ...segments.tracks);
   }
-  return `"${mkvextractPath}" "${file}" tracks ${args.join(" ")}`;
+  if (segments.chapters.length > 0) {
+    parts.push("chapters", segments.chapters[0]);
+  }
+  if (segments.attachments.length > 0) {
+    parts.push("attachments", ...segments.attachments);
+  }
+  return `"${mkvextractPath}" "${file}" ${parts.join(" ")}`;
 }
 
 export function formatHMS(ms: number): string {

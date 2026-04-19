@@ -80,7 +80,7 @@ interface MkvStore {
   queueOrder: string[];
   fileTracks: Record<string, MkvTrack[]>;
   fileTrackCounts: Record<string, TrackCounts>;
-  fileSelectedIds: Record<string, number[]>;
+  fileSelectedIds: Record<string, string[]>;
   fileOutputDirs: Record<string, string>;
   groupByFile: boolean;
   notification: Notification | null;
@@ -112,8 +112,8 @@ interface MkvStore {
   clearCompletedInDrive: (drive: string) => void;
   setFileTracks: (file: string, tracks: MkvTrack[]) => void;
   setFileTrackCounts: (file: string, counts: TrackCounts) => void;
-  setFileSelectedIds: (file: string, ids: number[]) => void;
-  setGroupSelectedIds: (files: string[], ids: number[]) => void;
+  setFileSelectedIds: (file: string, ids: string[]) => void;
+  setGroupSelectedIds: (files: string[], ids: string[]) => void;
   setFileOutputDir: (file: string, dir: string) => void;
   clearFileOutputDir: (file: string) => void;
   setGroupOutputDir: (files: string[], dir: string) => void;

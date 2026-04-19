@@ -80,6 +80,16 @@ pub struct ConfigProfile {
         default = "ConfigProfile::default_template"
     )]
     pub subtitle_template: String,
+    #[serde(
+        rename = "chaptersTemplate",
+        default = "ConfigProfile::default_template_no_language"
+    )]
+    pub chapters_template: String,
+    #[serde(
+        rename = "attachmentsTemplate",
+        default = "ConfigProfile::default_template_no_language"
+    )]
+    pub attachments_template: String,
     #[serde(rename = "selectVideo", default)]
     pub select_video: bool,
     #[serde(rename = "selectAudio", default)]
@@ -89,6 +99,10 @@ pub struct ConfigProfile {
         default = "ConfigProfile::default_select_subtitle"
     )]
     pub select_subtitle: bool,
+    #[serde(rename = "selectChapters", default)]
+    pub select_chapters: bool,
+    #[serde(rename = "selectAttachments", default)]
+    pub select_attachments: bool,
     #[serde(
         rename = "defaultGroupMode",
         default = "ConfigProfile::default_default_group_mode"
@@ -99,9 +113,14 @@ pub struct ConfigProfile {
 impl ConfigProfile {
     pub const DEFAULT_NAME: &'static str = "Default";
     pub const DEFAULT_TEMPLATE: &'static str = "{file_name}.{track_id}.{language}";
+    pub const DEFAULT_TEMPLATE_NO_LANGUAGE: &'static str = "{file_name}.{track_id}";
 
     fn default_template() -> String {
         Self::DEFAULT_TEMPLATE.to_owned()
+    }
+
+    fn default_template_no_language() -> String {
+        Self::DEFAULT_TEMPLATE_NO_LANGUAGE.to_owned()
     }
 
     fn default_select_subtitle() -> bool {
@@ -120,9 +139,13 @@ impl Default for ConfigProfile {
             video_template: Self::default_template(),
             audio_template: Self::default_template(),
             subtitle_template: Self::default_template(),
+            chapters_template: Self::default_template_no_language(),
+            attachments_template: Self::default_template_no_language(),
             select_video: false,
             select_audio: false,
             select_subtitle: true,
+            select_chapters: false,
+            select_attachments: false,
             default_group_mode: true,
         }
     }

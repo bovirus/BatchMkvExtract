@@ -97,6 +97,8 @@
     "video": "Video",
     "audio": "Audio",
     "subtitles": "Untertitel",
+    "chapters": "Kapitel",
+    "attachments": "Anhänge",
     "autoSelectOnDrop": "Beim Hinzufügen automatisch auswählen",
     "defaultGroupMode": "Standard-Gruppenmodus",
     "templatePlaceholdersHint": "Platzhalter: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",

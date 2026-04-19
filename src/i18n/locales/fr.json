@@ -97,6 +97,8 @@
     "video": "Vidéo",
     "audio": "Audio",
     "subtitles": "Sous-titres",
+    "chapters": "Chapitres",
+    "attachments": "Pièces jointes",
     "autoSelectOnDrop": "Sélectionner automatiquement à l'ajout",
     "defaultGroupMode": "Mode groupe par défaut",
     "templatePlaceholdersHint": "Espaces réservés : {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",

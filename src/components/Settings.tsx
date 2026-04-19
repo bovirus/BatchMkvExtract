@@ -354,6 +354,18 @@ export default function Settings() {
                       selectKey: "selectSubtitle" as const,
                       label: t("settings.subtitles"),
                     },
+                    {
+                      typeKey: "chapters" as const,
+                      templateKey: "chaptersTemplate" as const,
+                      selectKey: "selectChapters" as const,
+                      label: t("settings.chapters"),
+                    },
+                    {
+                      typeKey: "attachments" as const,
+                      templateKey: "attachmentsTemplate" as const,
+                      selectKey: "selectAttachments" as const,
+                      label: t("settings.attachments"),
+                    },
                   ] as const
                 ).map((row) => (
                   <Box key={row.typeKey}>

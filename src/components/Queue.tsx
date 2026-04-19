@@ -35,7 +35,7 @@ import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import ReplayIcon from "@mui/icons-material/Replay";
 import { dirname } from "@tauri-apps/api/path";
 import { useTranslation } from "react-i18next";
-import { buildExtractArgs, formatHMS } from "../extract-utils";
+import { buildExtractArgs, formatHMS, trackKey } from "../extract-utils";
 import type { QueueItem } from "../store";
 import { QueueItemStatus, useMkvStore } from "../store";
 import { cancelExtract, ensureOutputPath, enqueueExtract } from "../service";
@@ -186,11 +186,13 @@ export default function Queue() {
             }
             const file = item.file;
             const tracks = state.fileTracks[file] ?? [];
-            const ids = new Set(state.fileSelectedIds[file] ?? []);
+            const ids = new Set<string>(state.fileSelectedIds[file] ?? []);
             if (tracks.length === 0 || ids.size === 0) {
               continue;
             }
-            const selectedTracks = tracks.filter((tr) => ids.has(tr.id));
+            const selectedTracks = tracks.filter((tr) =>
+              ids.has(trackKey(tr)),
+            );
             if (selectedTracks.length === 0) {
               continue;
             }

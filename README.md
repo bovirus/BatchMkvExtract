@@ -14,6 +14,12 @@ BatchMkvExtract is a desktop GUI that drives [mkvextract](https://mkvtoolnix.dow
 * Cancel extractions from the card or queue
 * 8 UI languages with light and dark modes
 
+## Installation
+
+* Make sure you have [MKVToolNix](https://mkvtoolnix.download/) installed.
+* Download the latest installer from [Releases](https://github.com/caoccao/BatchMkvExtract/releases) or [Actions](https://github.com/caoccao/BatchMkvExtract/actions).
+* Run the installer, then launch the app from the Start Menu (Windows) or Applications folder (macOS).
+
 ## Documentation
 
 * [Development](docs/development.md)

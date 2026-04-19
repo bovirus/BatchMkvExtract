@@ -97,6 +97,8 @@
     "video": "ビデオ",
     "audio": "オーディオ",
     "subtitles": "字幕",
+    "chapters": "チャプター",
+    "attachments": "添付ファイル",
     "autoSelectOnDrop": "追加時に自動で選択",
     "defaultGroupMode": "既定のグループモード",
     "templatePlaceholdersHint": "プレースホルダー: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",

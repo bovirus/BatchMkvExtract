@@ -36,7 +36,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { dirname } from "@tauri-apps/api/path";
 import { useTranslation } from "react-i18next";
-import { buildExtractArgs } from "../extract-utils";
+import { buildExtractArgs, trackKey } from "../extract-utils";
 import { QueueItemStatus } from "../protocol";
 import { cancelExtract, ensureOutputPath, enqueueExtract } from "../service";
 import { useMkvStore } from "../store";
@@ -112,7 +112,7 @@ export default function Toolbar() {
     }
     for (const file of state.files) {
       const tracks = state.fileTracks[file] ?? [];
-      const ids = new Set(state.fileSelectedIds[file] ?? []);
+      const ids = new Set<string>(state.fileSelectedIds[file] ?? []);
       if (ids.size === 0 || tracks.length === 0) {
         continue;
       }
@@ -123,7 +123,9 @@ export default function Toolbar() {
       ) {
         continue;
       }
-      const selectedTracks = tracks.filter((track) => ids.has(track.id));
+      const selectedTracks = tracks.filter((track) =>
+        ids.has(trackKey(track)),
+      );
       if (selectedTracks.length === 0) {
         continue;
       }
