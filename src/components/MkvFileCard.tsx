@@ -23,17 +23,9 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Checkbox,
-  CircularProgress,
   IconButton,
   LinearProgress,
   Snackbar,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -47,8 +39,11 @@ import { dirname } from "@tauri-apps/api/path";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useTranslation } from "react-i18next";
 import {
+  cancelExtraction,
+  enqueueSelectedTracksForFile,
+} from "../actions/extractionActions";
+import {
   buildCommandString,
-  buildExtractArgs,
   formatHMS,
   makeTrackSelector,
   resolveOutputDir,
@@ -56,9 +51,6 @@ import {
 } from "../extract-utils";
 import { QueueItemStatus } from "../protocol";
 import {
-  cancelExtract,
-  ensureOutputPath,
-  enqueueExtract,
   getMkvTracks,
   launchBetterMediaInfo,
 } from "../service";
@@ -66,7 +58,7 @@ import { useMkvStore } from "../store";
 import { CardSummary } from "./CardSummary";
 import { FileStatusIcon } from "./FileStatusIcon";
 import { OutputPathDialog } from "./OutputPathDialog";
-import { TrackTypeIcon } from "./TrackTypeIcon";
+import { TrackSelectionTable } from "./TrackSelectionTable";
 
 interface MkvFileCardProps {
   path: string;
@@ -79,8 +71,6 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
     (s) => s.config?.externalTools?.mkvToolNixPath ?? "",
   );
   const entry = useMkvStore((s) => s.queueItems[path]);
-  const addToQueue = useMkvStore((s) => s.addToQueue);
-  const markCancelRequested = useMkvStore((s) => s.markCancelRequested);
   const setFileTracks = useMkvStore((s) => s.setFileTracks);
   const setFileTrackCounts = useMkvStore((s) => s.setFileTrackCounts);
   const setFileSelectedIds = useMkvStore((s) => s.setFileSelectedIds);
@@ -272,39 +262,21 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
       return;
     }
     try {
-      const outputDir = await resolveOutputDir(path, outputDirOverride);
-      try {
-        await ensureOutputPath(outputDir);
-      } catch {
-        useMkvStore
-          .getState()
-          .showNotification(
-            "error",
-            path,
-            t("notification.failedCreateOutput", { path: outputDir }),
-          );
-        return;
-      }
-      const args = await buildExtractArgs(
-        path,
-        outputDir,
+      await enqueueSelectedTracksForFile({
+        file: path,
         selectedTracks,
-        activeProfile,
-      );
-      await enqueueExtract(path, args);
-      addToQueue(path);
+        profile: activeProfile,
+        t,
+      });
     } catch (err) {
       setSnackbar({ message: String(err), severity: "error" });
     }
   };
 
   const handleCancel = async () => {
-    markCancelRequested(path);
-    try {
-      await cancelExtract(path);
-    } catch (err) {
-      setSnackbar({ message: String(err), severity: "error" });
-    }
+    await cancelExtraction(path, (err) =>
+      setSnackbar({ message: String(err), severity: "error" }),
+    );
   };
 
   const handleOpenOutputDialog = async () => {
@@ -344,11 +316,7 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
       return;
     }
     if (current?.status === QueueItemStatus.Waiting) {
-      try {
-        await cancelExtract(path);
-      } catch {
-        // ignore; backend may already have dropped the task
-      }
+      await cancelExtraction(path);
       const later = useMkvStore.getState().queueItems[path];
       if (later?.status === QueueItemStatus.Extracting) {
         return;
@@ -512,89 +480,24 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
         </Box>
       )}
       <CardContent sx={{ pt: 0, "&.MuiCardContent-root:last-child": { pb: 2 } }}>
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
-            <CircularProgress size={20} />
-          </Box>
-        ) : error ? (
-          <Typography variant="body2" color="error">
-            {error}
-          </Typography>
-        ) : tracks.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            {t("extract.noTracks")}
-          </Typography>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      size="small"
-                      disabled={isActive}
-                      checked={
-                        tracks.length > 0 &&
-                        selectedIds.size === tracks.length
-                      }
-                      indeterminate={
-                        selectedIds.size > 0 &&
-                        selectedIds.size < tracks.length
-                      }
-                      onChange={(e) => toggleAll(e.target.checked)}
-                    />
-                  </TableCell>
-                  <TableCell>{t("extract.header.id")}</TableCell>
-                  <TableCell>{t("extract.header.number")}</TableCell>
-                  <TableCell>{t("extract.header.type")}</TableCell>
-                  <TableCell>{t("extract.header.codec")}</TableCell>
-                  <TableCell>{t("extract.header.trackName")}</TableCell>
-                  <TableCell>{t("extract.header.language")}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {tracks.map((track) => (
-                  <TableRow
-                    key={track.id}
-                    hover
-                    sx={{ cursor: isActive ? "default" : "pointer" }}
-                    onClick={() => {
-                      if (isActive) {
-                        return;
-                      }
-                      toggleOne(
-                        trackKey(track),
-                        !selectedIds.has(trackKey(track)),
-                      );
-                    }}
-                  >
-                    <TableCell
-                      padding="checkbox"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Checkbox
-                        size="small"
-                        disabled={isActive}
-                        checked={selectedIds.has(trackKey(track))}
-                        onChange={(e) =>
-                          toggleOne(trackKey(track), e.target.checked)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>{track.id}</TableCell>
-                    <TableCell>{track.number}</TableCell>
-                    <TableCell>
-                      <TrackTypeIcon type={track.type} />
-                    </TableCell>
-                    <TableCell>{track.codec}</TableCell>
-                    <TableCell>{track.trackName}</TableCell>
-                    <TableCell>{track.language}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+        <TrackSelectionTable
+          tracks={tracks}
+          selectedIds={selectedIds}
+          disabled={isActive}
+          loading={loading}
+          errorText={error}
+          emptyText={t("extract.noTracks")}
+          headers={{
+            id: t("extract.header.id"),
+            number: t("extract.header.number"),
+            type: t("extract.header.type"),
+            codec: t("extract.header.codec"),
+            trackName: t("extract.header.trackName"),
+            language: t("extract.header.language"),
+          }}
+          onToggleAll={toggleAll}
+          onToggleOne={toggleOne}
+        />
       </CardContent>
       <Snackbar
         open={snackbar !== null}

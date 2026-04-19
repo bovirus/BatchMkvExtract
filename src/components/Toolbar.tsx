@@ -35,9 +35,13 @@ import InfoIcon from "@mui/icons-material/Info";
 import PersonIcon from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useTranslation } from "react-i18next";
-import { buildExtractArgs, resolveOutputDir, trackKey } from "../extract-utils";
+import {
+  cancelExtractions,
+  enqueueSelectedTracksForFile,
+  getActiveProfile,
+  getSelectedTracksForFile,
+} from "../actions/extractionActions";
 import { QueueItemStatus } from "../protocol";
-import { cancelExtract, ensureOutputPath, enqueueExtract } from "../service";
 import { useMkvStore } from "../store";
 
 export default function Toolbar() {
@@ -86,73 +90,29 @@ export default function Toolbar() {
           item.status === QueueItemStatus.Extracting,
       )
       .map((item) => item.file);
-    await Promise.all(
-      activeFiles.map(async (file) => {
-        state.markCancelRequested(file);
-        try {
-          await cancelExtract(file);
-        } catch (err) {
-          console.error("Cancel failed for", file, err);
-        }
-      }),
-    );
+    await cancelExtractions(activeFiles, (err, file) => {
+      console.error("Cancel failed for", file, err);
+    });
   }, []);
 
   const runExtractAll = useCallback(async () => {
     const state = useMkvStore.getState();
-    const cfg = state.config;
-    const profile = cfg
-      ? cfg.profiles.find((p) => p.name === cfg.activeProfile) ??
-        cfg.profiles[0] ??
-        null
-      : null;
+    const profile = getActiveProfile(state.config);
     if (!profile) {
       return;
     }
     for (const file of state.files) {
-      const tracks = state.fileTracks[file] ?? [];
-      const ids = new Set<string>(state.fileSelectedIds[file] ?? []);
-      if (ids.size === 0 || tracks.length === 0) {
-        continue;
-      }
-      const status = state.queueItems[file]?.status;
-      if (
-        status === QueueItemStatus.Waiting ||
-        status === QueueItemStatus.Extracting
-      ) {
-        continue;
-      }
-      const selectedTracks = tracks.filter((track) =>
-        ids.has(trackKey(track)),
-      );
+      const selectedTracks = getSelectedTracksForFile(file, state);
       if (selectedTracks.length === 0) {
         continue;
       }
       try {
-        const outputDir = await resolveOutputDir(
+        await enqueueSelectedTracksForFile({
           file,
-          state.fileOutputDirs[file],
-        );
-        try {
-          await ensureOutputPath(outputDir);
-        } catch {
-          state.showNotification(
-            "error",
-            file,
-            tRef.current("notification.failedCreateOutput", {
-              path: outputDir,
-            }),
-          );
-          continue;
-        }
-        const args = await buildExtractArgs(
-          file,
-          outputDir,
           selectedTracks,
           profile,
-        );
-        await enqueueExtract(file, args);
-        state.addToQueue(file);
+          t: tRef.current,
+        });
       } catch (err) {
         console.error("Extract All failed for", file, err);
       }

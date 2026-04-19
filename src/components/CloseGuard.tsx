@@ -26,8 +26,8 @@ import {
 } from "@mui/material";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useTranslation } from "react-i18next";
+import { cancelExtractions } from "../actions/extractionActions";
 import { QueueItemStatus } from "../protocol";
-import { cancelExtract } from "../service";
 import { useMkvStore } from "../store";
 
 export function CloseGuard() {
@@ -66,16 +66,9 @@ export function CloseGuard() {
           i.status === QueueItemStatus.Extracting,
       )
       .map((i) => i.file);
-    await Promise.all(
-      activeFiles.map(async (file) => {
-        state.markCancelRequested(file);
-        try {
-          await cancelExtract(file);
-        } catch (err) {
-          console.error("Cancel failed for", file, err);
-        }
-      }),
-    );
+    await cancelExtractions(activeFiles, (err, file) => {
+      console.error("Cancel failed for", file, err);
+    });
     setOpen(false);
     try {
       await getCurrentWebviewWindow().destroy();

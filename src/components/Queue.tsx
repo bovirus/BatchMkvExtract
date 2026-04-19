@@ -35,14 +35,15 @@ import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import ReplayIcon from "@mui/icons-material/Replay";
 import { useTranslation } from "react-i18next";
 import {
-  buildExtractArgs,
-  formatHMS,
-  resolveOutputDir,
-  trackKey,
-} from "../extract-utils";
+  cancelExtraction,
+  cancelExtractions,
+  enqueueSelectedTracksForFile,
+  getActiveProfile,
+  getSelectedTracksForFile,
+} from "../actions/extractionActions";
+import { formatHMS } from "../extract-utils";
 import type { QueueItem } from "../store";
 import { QueueItemStatus, useMkvStore } from "../store";
-import { cancelExtract, ensureOutputPath, enqueueExtract } from "../service";
 
 const TICK_INTERVAL_MS = 200;
 
@@ -100,15 +101,11 @@ export default function Queue() {
   const queueItems = useMkvStore((s) => s.queueItems);
   const queueOrder = useMkvStore((s) => s.queueOrder);
   const clearCompletedInDrive = useMkvStore((s) => s.clearCompletedInDrive);
-  const markCancelRequested = useMkvStore((s) => s.markCancelRequested);
 
   const handleCancel = async (file: string) => {
-    markCancelRequested(file);
-    try {
-      await cancelExtract(file);
-    } catch (err) {
+    await cancelExtraction(file, (err) => {
       console.error("Failed to cancel extraction", err);
-    }
+    });
   };
   const [now, setNow] = useState(() => Date.now());
 
@@ -161,25 +158,13 @@ export default function Queue() {
                 i.status === QueueItemStatus.Extracting,
             )
             .map((i) => i.file);
-          await Promise.all(
-            activeFiles.map(async (file) => {
-              markCancelRequested(file);
-              try {
-                await cancelExtract(file);
-              } catch (err) {
-                console.error("Cancel failed for", file, err);
-              }
-            }),
-          );
+          await cancelExtractions(activeFiles, (err, file) => {
+            console.error("Cancel failed for", file, err);
+          });
         };
         const handleResumeAllInDrive = async () => {
           const state = useMkvStore.getState();
-          const cfg = state.config;
-          const profile = cfg
-            ? cfg.profiles.find((p) => p.name === cfg.activeProfile) ??
-              cfg.profiles[0] ??
-              null
-            : null;
+          const profile = getActiveProfile(state.config);
           if (!profile) {
             return;
           }
@@ -189,40 +174,17 @@ export default function Queue() {
               continue;
             }
             const file = item.file;
-            const tracks = state.fileTracks[file] ?? [];
-            const ids = new Set<string>(state.fileSelectedIds[file] ?? []);
-            if (tracks.length === 0 || ids.size === 0) {
-              continue;
-            }
-            const selectedTracks = tracks.filter((tr) =>
-              ids.has(trackKey(tr)),
-            );
+            const selectedTracks = getSelectedTracksForFile(file, state);
             if (selectedTracks.length === 0) {
               continue;
             }
             try {
-              const outputDir = await resolveOutputDir(
+              await enqueueSelectedTracksForFile({
                 file,
-                state.fileOutputDirs[file],
-              );
-              try {
-                await ensureOutputPath(outputDir);
-              } catch {
-                state.showNotification(
-                  "error",
-                  file,
-                  t("notification.failedCreateOutput", { path: outputDir }),
-                );
-                continue;
-              }
-              const args = await buildExtractArgs(
-                file,
-                outputDir,
                 selectedTracks,
                 profile,
-              );
-              await enqueueExtract(file, args);
-              state.addToQueue(file);
+                t,
+              });
             } catch (err) {
               console.error("Resume failed for", file, err);
             }

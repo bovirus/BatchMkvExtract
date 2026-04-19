@@ -15,8 +15,7 @@
  *   limitations under the License.
  */
 
-import { useEffect, useRef, useState } from "react";
-import { useDebouncedEffect } from "../hooks";
+import { useCallback, useState } from "react";
 import {
   Box,
   Button,
@@ -45,6 +44,11 @@ import { useTranslation } from "react-i18next";
 import * as Protocol from "../protocol";
 import { detectBetterMediaInfo, isMkvtoolnixFound } from "../service";
 import { useMkvStore } from "../store";
+import { ExternalToolPathRow } from "./settings/ExternalToolPathRow";
+import {
+  DetectToolPath,
+  useToolPathDetection,
+} from "./settings/useToolPathDetection";
 
 function SectionHeader({
   icon,
@@ -99,131 +103,104 @@ export default function Settings() {
   const resetActiveProfileTemplates = useMkvStore(
     (s) => s.resetActiveProfileTemplates,
   );
-
-  const [mkvToolNixPath, setMkvToolNixPath] = useState("");
-  const [mkvtoolnixFound, setMkvtoolnixFound] = useState(false);
-  const [betterMediaInfoPath, setBetterMediaInfoPath] = useState("");
-  const [betterMediaInfoDetection, setBetterMediaInfoDetection] = useState<
-    null | { found: boolean }
-  >(null);
+  const setBetterMediaInfoAvailable = useMkvStore(
+    (s) => s.setBetterMediaInfoAvailable,
+  );
   const [newProfileName, setNewProfileName] = useState("");
-  const initializedRef = useRef(false);
 
-  useEffect(() => {
-    if (config && !initializedRef.current) {
-      initializedRef.current = true;
-      setMkvToolNixPath(config.externalTools?.mkvToolNixPath ?? "");
-      setBetterMediaInfoPath(config.externalTools?.betterMediaInfoPath ?? "");
-    }
-  }, [config]);
-
-  useDebouncedEffect(
-    async (isCancelled) => {
-      if (!initializedRef.current) {
+  const updateExternalTools = useCallback(
+    (patch: Partial<Protocol.ConfigExternalTools>) => {
+      if (!config) {
         return;
       }
-      try {
-        const status = await isMkvtoolnixFound(mkvToolNixPath.trim());
-        if (isCancelled()) {
-          return;
-        }
-        setMkvtoolnixFound(status.found);
-        if (
-          status.found &&
-          status.mkvToolNixPath &&
-          status.mkvToolNixPath !== mkvToolNixPath
-        ) {
-          setMkvToolNixPath(status.mkvToolNixPath);
-          if (
-            config &&
-            config.externalTools?.mkvToolNixPath !== status.mkvToolNixPath
-          ) {
-            updateConfig({
-              externalTools: {
-                mkvToolNixPath: status.mkvToolNixPath,
-                betterMediaInfoPath:
-                  config.externalTools?.betterMediaInfoPath ?? "",
-              },
-            });
-          }
-        }
-      } catch {
-        if (!isCancelled()) {
-          setMkvtoolnixFound(false);
-        }
-      }
+      updateConfig({
+        externalTools: {
+          mkvToolNixPath:
+            patch.mkvToolNixPath ?? config.externalTools?.mkvToolNixPath ?? "",
+          betterMediaInfoPath:
+            patch.betterMediaInfoPath ??
+            config.externalTools?.betterMediaInfoPath ??
+            "",
+        },
+      });
     },
-    250,
-    [mkvToolNixPath, config, updateConfig],
+    [config, updateConfig],
   );
 
-  useDebouncedEffect(
-    async (isCancelled) => {
-      if (!initializedRef.current) {
+  const persistMkvToolNixPath = useCallback(
+    (value: string) => {
+      if (!config) {
         return;
       }
-      try {
-        const result = await detectBetterMediaInfo(betterMediaInfoPath.trim());
-        if (isCancelled()) {
-          return;
-        }
-        setBetterMediaInfoDetection({ found: result.found });
-        useMkvStore.getState().setBetterMediaInfoAvailable(result.found);
-        if (
-          result.found &&
-          result.path &&
-          result.path !== betterMediaInfoPath
-        ) {
-          setBetterMediaInfoPath(result.path);
-          if (
-            config &&
-            config.externalTools?.betterMediaInfoPath !== result.path
-          ) {
-            updateConfig({
-              externalTools: {
-                mkvToolNixPath: config.externalTools?.mkvToolNixPath ?? "",
-                betterMediaInfoPath: result.path,
-              },
-            });
-          }
-        }
-      } catch {
-        if (!isCancelled()) {
-          setBetterMediaInfoDetection({ found: false });
-        }
+      if (value === (config.externalTools?.mkvToolNixPath ?? "")) {
+        return;
       }
+      updateExternalTools({ mkvToolNixPath: value });
     },
-    250,
-    [betterMediaInfoPath, config, updateConfig],
+    [config, updateExternalTools],
   );
 
-  const handleDetectMkvToolNix = async () => {
-    try {
-      const status = await isMkvtoolnixFound(mkvToolNixPath.trim(), true);
-      setMkvtoolnixFound(status.found);
-      if (
-        status.found &&
-        status.mkvToolNixPath &&
-        status.mkvToolNixPath !== mkvToolNixPath
-      ) {
-        setMkvToolNixPath(status.mkvToolNixPath);
-        if (
-          config &&
-          config.externalTools?.mkvToolNixPath !== status.mkvToolNixPath
-        ) {
-          updateConfig({
-            externalTools: {
-              mkvToolNixPath: status.mkvToolNixPath,
-              betterMediaInfoPath:
-                config.externalTools?.betterMediaInfoPath ?? "",
-            },
-          });
-        }
+  const persistBetterMediaInfoPath = useCallback(
+    (value: string) => {
+      if (!config) {
+        return;
       }
-    } catch {
-      setMkvtoolnixFound(false);
-    }
-  };
+      if (value === (config.externalTools?.betterMediaInfoPath ?? "")) {
+        return;
+      }
+      updateExternalTools({ betterMediaInfoPath: value });
+    },
+    [config, updateExternalTools],
+  );
+
+  const detectMkvToolNixPath = useCallback<DetectToolPath>(
+    async (path, checkRunning = false) => {
+      const status = await isMkvtoolnixFound(path, checkRunning);
+      return {
+        found: status.found,
+        path: status.mkvToolNixPath,
+      };
+    },
+    [],
+  );
+
+  const detectBetterMediaInfoPath = useCallback<DetectToolPath>(
+    async (path, checkRunning = false) => {
+      const status = await detectBetterMediaInfo(path, checkRunning);
+      return {
+        found: status.found,
+        path: status.path,
+      };
+    },
+    [],
+  );
+
+  const {
+    path: mkvToolNixPath,
+    setPath: setMkvToolNixPath,
+    detection: mkvtoolnixFound,
+    detectNow: handleDetectMkvToolNix,
+    handleBlur: handlePathBlur,
+  } = useToolPathDetection({
+    ready: config !== null,
+    initialPath: config?.externalTools?.mkvToolNixPath ?? "",
+    detectPath: detectMkvToolNixPath,
+    persistPath: persistMkvToolNixPath,
+  });
+
+  const {
+    path: betterMediaInfoPath,
+    setPath: setBetterMediaInfoPath,
+    detection: betterMediaInfoDetection,
+    detectNow: handleDetectBetterMediaInfo,
+    handleBlur: handleBetterMediaInfoPathBlur,
+  } = useToolPathDetection({
+    ready: config !== null,
+    initialPath: config?.externalTools?.betterMediaInfoPath ?? "",
+    detectPath: detectBetterMediaInfoPath,
+    persistPath: persistBetterMediaInfoPath,
+    onFoundChange: setBetterMediaInfoAvailable,
+  });
 
   const handleBrowseMkvToolNixPath = async () => {
     const directory = await open({
@@ -232,40 +209,8 @@ export default function Settings() {
     });
     if (typeof directory === "string" && directory.length > 0) {
       setMkvToolNixPath(directory);
-      updateConfig({
-        externalTools: {
-          mkvToolNixPath: directory,
-          betterMediaInfoPath: config?.externalTools?.betterMediaInfoPath ?? "",
-        },
-      });
+      persistMkvToolNixPath(directory);
     }
-  };
-
-  const handlePathBlur = () => {
-    const trimmed = mkvToolNixPath.trim();
-    if (config && trimmed !== (config.externalTools?.mkvToolNixPath ?? "")) {
-      updateConfig({
-        externalTools: {
-          mkvToolNixPath: trimmed,
-          betterMediaInfoPath: config.externalTools?.betterMediaInfoPath ?? "",
-        },
-      });
-    }
-  };
-
-  const persistBetterMediaInfoPath = (value: string) => {
-    if (!config) {
-      return;
-    }
-    if (value === (config.externalTools?.betterMediaInfoPath ?? "")) {
-      return;
-    }
-    updateConfig({
-      externalTools: {
-        mkvToolNixPath: config.externalTools?.mkvToolNixPath ?? "",
-        betterMediaInfoPath: value,
-      },
-    });
   };
 
   const handleBrowseBetterMediaInfoPath = async () => {
@@ -276,29 +221,6 @@ export default function Settings() {
     if (typeof directory === "string" && directory.length > 0) {
       setBetterMediaInfoPath(directory);
       persistBetterMediaInfoPath(directory);
-    }
-  };
-
-  const handleBetterMediaInfoPathBlur = () => {
-    const trimmed = betterMediaInfoPath.trim();
-    persistBetterMediaInfoPath(trimmed);
-  };
-
-  const handleDetectBetterMediaInfo = async () => {
-    try {
-      const result = await detectBetterMediaInfo(
-        betterMediaInfoPath.trim(),
-        true,
-      );
-      setBetterMediaInfoDetection({ found: result.found });
-      useMkvStore.getState().setBetterMediaInfoAvailable(result.found);
-      if (result.found && result.path && result.path !== betterMediaInfoPath) {
-        setBetterMediaInfoPath(result.path);
-        persistBetterMediaInfoPath(result.path);
-      }
-    } catch {
-      setBetterMediaInfoDetection({ found: false });
-      useMkvStore.getState().setBetterMediaInfoAvailable(false);
     }
   };
 
@@ -613,90 +535,34 @@ export default function Settings() {
             title={t("settings.externalTools")}
           />
           <Box sx={{ py: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t("settings.mkvToolNixPath")}
-            </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <TextField
-                value={mkvToolNixPath}
-                onChange={(e) => setMkvToolNixPath(e.target.value)}
-                onBlur={handlePathBlur}
-                size="small"
-                fullWidth
-              />
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleBrowseMkvToolNixPath}
-                sx={{ minWidth: 90, height: 36, textTransform: "none" }}
-              >
-                {t("settings.browse")}
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleDetectMkvToolNix}
-                sx={{ minWidth: 90, height: 36, textTransform: "none" }}
-              >
-                {t("settings.detect")}
-              </Button>
-            </Box>
-            <Typography
-              variant="caption"
-              sx={{
-                mt: 0.75,
-                display: "block",
-                color: mkvtoolnixFound ? "success.main" : "error.main",
-              }}
-            >
-              {mkvtoolnixFound
-                ? t("settings.mkvToolNixFound")
-                : t("settings.mkvToolNixNotFound")}
-            </Typography>
+            <ExternalToolPathRow
+              label={t("settings.mkvToolNixPath")}
+              value={mkvToolNixPath}
+              status={mkvtoolnixFound ?? false}
+              foundLabel={t("settings.mkvToolNixFound")}
+              notFoundLabel={t("settings.mkvToolNixNotFound")}
+              browseLabel={t("settings.browse")}
+              detectLabel={t("settings.detect")}
+              onChange={setMkvToolNixPath}
+              onBlur={handlePathBlur}
+              onBrowse={handleBrowseMkvToolNixPath}
+              onDetect={handleDetectMkvToolNix}
+            />
           </Box>
           <Box sx={{ py: 1, borderTop: 1, borderColor: "divider" }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t("settings.betterMediaInfoPath")}
-            </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <TextField
-                value={betterMediaInfoPath}
-                onChange={(e) => setBetterMediaInfoPath(e.target.value)}
-                onBlur={handleBetterMediaInfoPathBlur}
-                size="small"
-                fullWidth
-              />
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleBrowseBetterMediaInfoPath}
-                sx={{ minWidth: 90, height: 36, textTransform: "none" }}
-              >
-                {t("settings.browse")}
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleDetectBetterMediaInfo}
-                sx={{ minWidth: 90, height: 36, textTransform: "none" }}
-              >
-                {t("settings.detect")}
-              </Button>
-            </Box>
-            {betterMediaInfoDetection ? (
-              <Typography
-                variant="caption"
-                sx={{
-                  mt: 0.75,
-                  display: "block",
-                  color: betterMediaInfoDetection.found ? "success.main" : "error.main",
-                }}
-              >
-                {betterMediaInfoDetection.found
-                  ? t("settings.betterMediaInfoFound")
-                  : t("settings.betterMediaInfoNotFound")}
-              </Typography>
-            ) : null}
+            <ExternalToolPathRow
+              label={t("settings.betterMediaInfoPath")}
+              value={betterMediaInfoPath}
+              status={betterMediaInfoDetection}
+              foundLabel={t("settings.betterMediaInfoFound")}
+              notFoundLabel={t("settings.betterMediaInfoNotFound")}
+              browseLabel={t("settings.browse")}
+              detectLabel={t("settings.detect")}
+              onChange={setBetterMediaInfoPath}
+              onBlur={handleBetterMediaInfoPathBlur}
+              onBrowse={handleBrowseBetterMediaInfoPath}
+              onDetect={handleDetectBetterMediaInfo}
+            />
           </Box>
         </Paper>
 

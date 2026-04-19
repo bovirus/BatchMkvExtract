@@ -95,6 +95,28 @@ fn get_tool_path(path: &Path, tool: &str) -> PathBuf {
     path.join(tool)
 }
 
+fn apply_platform_command_options(cmd: &mut std::process::Command) {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+}
+
+fn resolve_mkvtoolnix_tool_path(tool: &str) -> Result<PathBuf> {
+    let cfg = config::get_config();
+    let resolution = resolve_mkvtoolnix(&cfg.external_tools.mkv_toolnix_path, tool);
+    persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
+    Ok(get_tool_path(&resolution.path, tool))
+}
+
+fn create_mkvtoolnix_command(tool: &str) -> Result<(PathBuf, std::process::Command)> {
+    let tool_path = resolve_mkvtoolnix_tool_path(tool)?;
+    let mut cmd = std::process::Command::new(&tool_path);
+    apply_platform_command_options(&mut cmd);
+    Ok((tool_path, cmd))
+}
+
 fn validate_path_as_file(path: &Path) -> anyhow::Result<()> {
     if !path.exists() {
         Err(anyhow::anyhow!("Path {} does not exist.", path.display()))
@@ -237,17 +259,8 @@ fn persist_mkvtoolnix_path_if_auto_detected(resolution: &MkvToolNixResolution) -
 pub async fn get_mkv_tracks(file: String) -> Result<Vec<MkvTrack>> {
     let path = Path::new(file.as_str());
     validate_path_as_file(path)?;
-    let cfg = config::get_config();
-    let resolution = resolve_mkvtoolnix(&cfg.external_tools.mkv_toolnix_path, "mkvmerge");
-    persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
-    let mkvmerge_path = get_tool_path(&resolution.path, "mkvmerge");
-    let mut cmd = std::process::Command::new(&mkvmerge_path);
+    let (mkvmerge_path, mut cmd) = create_mkvtoolnix_command("mkvmerge")?;
     cmd.arg("-J").arg(&file);
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
     let output = cmd.output().map_err(|e| {
         anyhow::anyhow!(
             "MKVMERGE_NOT_AVAILABLE:{}: {}",
@@ -338,20 +351,11 @@ fn derive_attachment_subtype(file_name: &str, content_type: &str) -> String {
 pub fn spawn_mkvextract(file: &str, args: &[String]) -> Result<std::process::Child> {
     let path = Path::new(file);
     validate_path_as_file(path)?;
-    let cfg = config::get_config();
-    let resolution = resolve_mkvtoolnix(&cfg.external_tools.mkv_toolnix_path, "mkvextract");
-    persist_mkvtoolnix_path_if_auto_detected(&resolution)?;
-    let mkvextract_path = get_tool_path(&resolution.path, "mkvextract");
-    let mut cmd = std::process::Command::new(&mkvextract_path);
+    let (mkvextract_path, mut cmd) = create_mkvtoolnix_command("mkvextract")?;
     cmd.arg(file)
         .args(args)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
     cmd.spawn().map_err(|e| {
         anyhow::anyhow!(
             "MKVEXTRACT_NOT_AVAILABLE:{}: {}",
