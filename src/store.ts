@@ -39,6 +39,8 @@ export interface TrackCounts {
   video: number;
   audio: number;
   subtitles: number;
+  chapters: number;
+  attachments: number;
 }
 
 function isTerminalStatus(status: QueueItemStatus): boolean {

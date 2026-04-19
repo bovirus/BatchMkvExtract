@@ -161,6 +161,9 @@ export default function Toolbar() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.altKey || event.shiftKey) {
+        return;
+      }
       if (
         event.key === "F3" ||
         event.key === "F4" ||

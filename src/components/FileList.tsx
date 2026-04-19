@@ -58,7 +58,7 @@ export default function FileList() {
         ungroupable.push(file);
         continue;
       }
-      const key = `${getParentDir(file)}|v=${counts.video}|a=${counts.audio}|s=${counts.subtitles}`;
+      const key = `${getParentDir(file)}|v=${counts.video}|a=${counts.audio}|s=${counts.subtitles}|c=${counts.chapters}|t=${counts.attachments}`;
       let bucket = buckets.get(key);
       if (!bucket) {
         bucket = [];

@@ -223,6 +223,8 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
         let video = 0;
         let audio = 0;
         let subtitles = 0;
+        let chapters = 0;
+        let attachments = 0;
         for (const track of result) {
           if (track.type === "video") {
             video += 1;
@@ -230,9 +232,19 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
             audio += 1;
           } else if (track.type === "subtitles") {
             subtitles += 1;
+          } else if (track.type === "chapters") {
+            chapters += 1;
+          } else if (track.type === "attachment") {
+            attachments += 1;
           }
         }
-        setFileTrackCounts(path, { video, audio, subtitles });
+        setFileTrackCounts(path, {
+          video,
+          audio,
+          subtitles,
+          chapters,
+          attachments,
+        });
       })
       .catch((err) => {
         if (cancelled) {
