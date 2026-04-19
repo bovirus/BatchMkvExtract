@@ -124,5 +124,10 @@
     "exitMessage": "There are extractions in progress. Are you sure you want to exit?",
     "yes": "Yes",
     "no": "No"
+  },
+  "card": {
+    "summary": {
+      "toPath": "To path {{path}}"
+    }
   }
 }

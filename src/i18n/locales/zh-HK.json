@@ -124,5 +124,10 @@
     "exitMessage": "目前有擷取作業進行中。確定要結束嗎?",
     "yes": "係",
     "no": "唔係"
+  },
+  "card": {
+    "summary": {
+      "toPath": "輸出至 {{path}}"
+    }
   }
 }

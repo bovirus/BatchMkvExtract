@@ -124,5 +124,10 @@
     "exitMessage": "Es laufen noch Extraktionen. Möchten Sie wirklich beenden?",
     "yes": "Ja",
     "no": "Nein"
+  },
+  "card": {
+    "summary": {
+      "toPath": "Nach {{path}}"
+    }
   }
 }

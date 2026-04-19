@@ -34,9 +34,8 @@ import FolderCopyIcon from "@mui/icons-material/FolderCopy";
 import InfoIcon from "@mui/icons-material/Info";
 import PersonIcon from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { dirname } from "@tauri-apps/api/path";
 import { useTranslation } from "react-i18next";
-import { buildExtractArgs, trackKey } from "../extract-utils";
+import { buildExtractArgs, resolveOutputDir, trackKey } from "../extract-utils";
 import { QueueItemStatus } from "../protocol";
 import { cancelExtract, ensureOutputPath, enqueueExtract } from "../service";
 import { useMkvStore } from "../store";
@@ -130,9 +129,10 @@ export default function Toolbar() {
         continue;
       }
       try {
-        const override = state.fileOutputDirs[file];
-        const outputDir =
-          override && override.length > 0 ? override : await dirname(file);
+        const outputDir = await resolveOutputDir(
+          file,
+          state.fileOutputDirs[file],
+        );
         try {
           await ensureOutputPath(outputDir);
         } catch {

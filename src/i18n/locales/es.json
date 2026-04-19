@@ -124,5 +124,10 @@
     "exitMessage": "Hay extracciones en curso. ¿Seguro que quieres salir?",
     "yes": "Sí",
     "no": "No"
+  },
+  "card": {
+    "summary": {
+      "toPath": "A {{path}}"
+    }
   }
 }

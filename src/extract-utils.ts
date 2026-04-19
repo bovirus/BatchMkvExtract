@@ -15,7 +15,13 @@
  *   limitations under the License.
  */
 
-import { basename, extname, join, sep as getSep } from "@tauri-apps/api/path";
+import {
+  basename,
+  dirname,
+  extname,
+  join,
+  sep as getSep,
+} from "@tauri-apps/api/path";
 import type { ConfigProfile, MkvTrack } from "./protocol";
 
 export interface TemplateContext {
@@ -297,6 +303,16 @@ export function getTrackExtension(codecId: string, trackType: string): string {
 export async function getFileNameWithoutExt(filePath: string): Promise<string> {
   const ext = await extname(filePath);
   return await basename(filePath, ext ? `.${ext}` : undefined);
+}
+
+export async function resolveOutputDir(
+  file: string,
+  override: string | undefined,
+): Promise<string> {
+  if (override && override.length > 0) {
+    return override;
+  }
+  return await dirname(file);
 }
 
 export function buildOutputFileName(

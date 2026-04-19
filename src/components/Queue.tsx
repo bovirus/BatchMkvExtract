@@ -33,9 +33,13 @@ import {
 import CancelIcon from "@mui/icons-material/Cancel";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import ReplayIcon from "@mui/icons-material/Replay";
-import { dirname } from "@tauri-apps/api/path";
 import { useTranslation } from "react-i18next";
-import { buildExtractArgs, formatHMS, trackKey } from "../extract-utils";
+import {
+  buildExtractArgs,
+  formatHMS,
+  resolveOutputDir,
+  trackKey,
+} from "../extract-utils";
 import type { QueueItem } from "../store";
 import { QueueItemStatus, useMkvStore } from "../store";
 import { cancelExtract, ensureOutputPath, enqueueExtract } from "../service";
@@ -197,11 +201,10 @@ export default function Queue() {
               continue;
             }
             try {
-              const override = state.fileOutputDirs[file];
-              const outputDir =
-                override && override.length > 0
-                  ? override
-                  : await dirname(file);
+              const outputDir = await resolveOutputDir(
+                file,
+                state.fileOutputDirs[file],
+              );
               try {
                 await ensureOutputPath(outputDir);
               } catch {
