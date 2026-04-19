@@ -13,6 +13,7 @@ BatchMkvExtract is a desktop GUI that drives [mkvextract](https://mkvtoolnix.dow
 * Live progress bar with elapsed time and ETA
 * Cancel extractions from the card or queue
 * 8 UI languages with light and dark modes
+* Integrate with [BetterMediaInfo](https://github.com/caoccao/BetterMediaInfo)
 
 ## Installation
 

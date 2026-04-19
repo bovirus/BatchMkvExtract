@@ -12,6 +12,7 @@
 
 * Drag and drop `.mkv` files or folders onto the window
 * Launch the app with file or folder paths as arguments to pre-populate the list
+* Integrate with [BetterMediaInfo](https://github.com/caoccao/BetterMediaInfo)
 
 ### Extract
 

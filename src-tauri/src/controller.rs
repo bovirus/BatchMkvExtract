@@ -113,6 +113,23 @@ fn better_media_info_exe_name() -> &'static str {
     }
 }
 
+fn find_running_better_media_info_dir() -> Option<PathBuf> {
+    let exe_name = better_media_info_exe_name();
+    let sys = sysinfo::System::new_all();
+    for process in sys.processes().values() {
+        let name = process.name().to_string_lossy();
+        if !name.eq_ignore_ascii_case(exe_name) {
+            continue;
+        }
+        if let Some(exe) = process.exe() {
+            if let Some(parent) = exe.parent() {
+                return Some(parent.to_path_buf());
+            }
+        }
+    }
+    None
+}
+
 fn find_better_media_info_dir(path: &Path) -> Option<PathBuf> {
     if !path.exists() {
         return None;
@@ -188,7 +205,18 @@ pub async fn launch_better_media_info(paths: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-pub async fn detect_better_media_info(user_path: String) -> Result<BetterMediaInfoStatus> {
+pub async fn detect_better_media_info(
+    user_path: String,
+    check_running: bool,
+) -> Result<BetterMediaInfoStatus> {
+    if check_running {
+        if let Some(dir) = find_running_better_media_info_dir() {
+            return Ok(BetterMediaInfoStatus {
+                found: true,
+                path: dir.to_string_lossy().to_string(),
+            });
+        }
+    }
     let trimmed = user_path.trim();
     if !trimmed.is_empty() {
         if let Some(found) = find_better_media_info_dir(Path::new(trimmed)) {

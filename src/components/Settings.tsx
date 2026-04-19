@@ -257,14 +257,19 @@ export default function Settings() {
 
   const handleDetectBetterMediaInfo = async () => {
     try {
-      const result = await detectBetterMediaInfo(betterMediaInfoPath.trim());
+      const result = await detectBetterMediaInfo(
+        betterMediaInfoPath.trim(),
+        true,
+      );
       setBetterMediaInfoDetection({ found: result.found });
+      useMkvStore.getState().setBetterMediaInfoAvailable(result.found);
       if (result.found && result.path && result.path !== betterMediaInfoPath) {
         setBetterMediaInfoPath(result.path);
         persistBetterMediaInfoPath(result.path);
       }
     } catch {
       setBetterMediaInfoDetection({ found: false });
+      useMkvStore.getState().setBetterMediaInfoAvailable(false);
     }
   };
 

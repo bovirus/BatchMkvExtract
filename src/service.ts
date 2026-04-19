@@ -80,9 +80,11 @@ export async function ensureOutputPath(path: string): Promise<void> {
 
 export async function detectBetterMediaInfo(
   path: string,
+  checkRunning: boolean = false,
 ): Promise<BetterMediaInfoStatus> {
   return await invoke<BetterMediaInfoStatus>("detect_better_media_info", {
     path,
+    checkRunning,
   });
 }
 

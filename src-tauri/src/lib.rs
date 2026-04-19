@@ -101,8 +101,9 @@ async fn ensure_output_path(path: String) -> Result<(), String> {
 #[tauri::command]
 async fn detect_better_media_info(
     path: String,
+    check_running: bool,
 ) -> Result<protocol::BetterMediaInfoStatus, String> {
-    controller::detect_better_media_info(path)
+    controller::detect_better_media_info(path, check_running)
         .await
         .map_err(convert_error)
 }
