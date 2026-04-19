@@ -90,7 +90,8 @@
     "audio": "Audio",
     "subtitles": "Sous-titres",
     "autoSelectOnDrop": "Sélectionner automatiquement à l'ajout",
-    "templateTokensHint": "Variables : {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
+    "defaultGroupMode": "Mode groupe par défaut",
+    "templatePlaceholdersHint": "Espaces réservés : {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
     "resetTemplates": "Rétablir les valeurs par défaut"
   },
   "about": {

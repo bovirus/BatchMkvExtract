@@ -31,7 +31,7 @@ function sanitizeFileNamePart(s: string): string {
   return s.replace(/[\\/:*?"<>|]/g, "_");
 }
 
-function buildTokenValues(context: TemplateContext): Record<string, string> {
+function buildPlaceholderValues(context: TemplateContext): Record<string, string> {
   return {
     file_name: context.fileName,
     track_id: String(context.trackId),
@@ -46,7 +46,7 @@ export function renderTemplate(
   template: string,
   context: TemplateContext,
 ): string {
-  const values = buildTokenValues(context);
+  const values = buildPlaceholderValues(context);
   const len = template.length;
   let out = "";
   let i = 0;

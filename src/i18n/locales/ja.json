@@ -90,7 +90,8 @@
     "audio": "オーディオ",
     "subtitles": "字幕",
     "autoSelectOnDrop": "追加時に自動で選択",
-    "templateTokensHint": "トークン: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
+    "defaultGroupMode": "既定のグループモード",
+    "templatePlaceholdersHint": "プレースホルダー: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
     "resetTemplates": "デフォルトに戻す"
   },
   "about": {

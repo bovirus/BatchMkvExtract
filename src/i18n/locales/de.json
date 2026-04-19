@@ -90,7 +90,8 @@
     "audio": "Audio",
     "subtitles": "Untertitel",
     "autoSelectOnDrop": "Beim Hinzufügen automatisch auswählen",
-    "templateTokensHint": "Platzhalter: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
+    "defaultGroupMode": "Standard-Gruppenmodus",
+    "templatePlaceholdersHint": "Platzhalter: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
     "resetTemplates": "Auf Standard zurücksetzen"
   },
   "about": {

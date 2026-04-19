@@ -32,7 +32,7 @@
 
 * Switch profiles from the toolbar (F9)
 * Each profile has its own filename templates for video, audio, and subtitle tracks
-* Tokens: `{file_name}`, `{track_id}`, `{track_number}`, `{language}`, `{codec_name}`, `{track_name}`
+* Placeholders: `{file_name}`, `{track_id}`, `{track_number}`, `{language}`, `{codec_name}`, `{track_name}`
 * Each profile chooses which track types get selected by default when a file is added
 * The built-in `Default` profile selects subtitles
 * Add, reset, and delete profiles from Settings

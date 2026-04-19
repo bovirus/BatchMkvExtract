@@ -142,10 +142,10 @@ The backend uses a custom `tokio` runtime with `worker_threads(4)` set in `lib.r
 `extract-utils.ts::renderTemplate` is a single-pass character scanner:
 
 - `{{` / `}}` escape to literal braces
-- `{token}` replaces with the corresponding value
-- Unknown tokens are emitted verbatim (e.g. `{typo}` stays `{typo}`)
+- `{placeholder}` replaces with the corresponding value
+- Unknown placeholders are emitted verbatim (e.g. `{typo}` stays `{typo}`)
 
-Supported tokens: `{file_name}`, `{track_id}`, `{track_number}`, `{language}`, `{codec_name}`, `{track_name}`. `{codec_name}` and `{track_name}` are sanitized for filesystem-unsafe characters before substitution.
+Supported placeholders: `{file_name}`, `{track_id}`, `{track_number}`, `{language}`, `{codec_name}`, `{track_name}`. `{codec_name}` and `{track_name}` are sanitized for filesystem-unsafe characters before substitution.
 
 ## CI
 

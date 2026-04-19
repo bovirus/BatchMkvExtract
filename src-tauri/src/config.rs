@@ -89,6 +89,11 @@ pub struct ConfigProfile {
         default = "ConfigProfile::default_select_subtitle"
     )]
     pub select_subtitle: bool,
+    #[serde(
+        rename = "defaultGroupMode",
+        default = "ConfigProfile::default_default_group_mode"
+    )]
+    pub default_group_mode: bool,
 }
 
 impl ConfigProfile {
@@ -100,6 +105,10 @@ impl ConfigProfile {
     }
 
     fn default_select_subtitle() -> bool {
+        true
+    }
+
+    fn default_default_group_mode() -> bool {
         true
     }
 }
@@ -114,6 +123,7 @@ impl Default for ConfigProfile {
             select_video: false,
             select_audio: false,
             select_subtitle: true,
+            default_group_mode: true,
         }
     }
 }

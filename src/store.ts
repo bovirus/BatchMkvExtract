@@ -171,7 +171,11 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
   initConfig: async () => {
     try {
       const config = await getConfig();
-      set({ config });
+      const active =
+        config.profiles.find((p) => p.name === config.activeProfile) ??
+        config.profiles[0];
+      const groupByFile = active?.defaultGroupMode ?? false;
+      set({ config, groupByFile });
     } catch (err) {
       console.error("Failed to load config", err);
     }
@@ -197,6 +201,9 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
     const profiles = current.profiles.map((p) =>
       p.name === current.activeProfile ? { ...p, ...patch } : p,
     );
+    if (patch.defaultGroupMode !== undefined) {
+      set({ groupByFile: patch.defaultGroupMode });
+    }
     await get().updateConfig({ profiles });
   },
   addProfile: async (name) => {
@@ -212,6 +219,7 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
       return;
     }
     const fresh = createDefaultProfile(trimmed);
+    set({ groupByFile: fresh.defaultGroupMode });
     await get().updateConfig({
       profiles: [...current.profiles, fresh],
       activeProfile: trimmed,
@@ -228,6 +236,8 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
     const profiles = current.profiles.filter(
       (p) => p.name !== current.activeProfile,
     );
+    const fallback = profiles.find((p) => p.name === DEFAULT_PROFILE_NAME);
+    set({ groupByFile: fallback?.defaultGroupMode ?? false });
     await get().updateConfig({
       profiles,
       activeProfile: DEFAULT_PROFILE_NAME,
@@ -238,9 +248,11 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
     if (!current) {
       return;
     }
-    if (!current.profiles.some((p) => p.name === name)) {
+    const target = current.profiles.find((p) => p.name === name);
+    if (!target) {
       return;
     }
+    set({ groupByFile: target.defaultGroupMode });
     await get().updateConfig({ activeProfile: name });
   },
   resetActiveProfileTemplates: async () => {
@@ -252,6 +264,7 @@ export const useMkvStore = create<MkvStore>((set, get) => ({
     const profiles = current.profiles.map((p) =>
       p.name === current.activeProfile ? fresh : p,
     );
+    set({ groupByFile: fresh.defaultGroupMode });
     await get().updateConfig({ profiles });
   },
   applyExtractSnapshot: (entries) => {

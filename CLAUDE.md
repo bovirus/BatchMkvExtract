@@ -69,7 +69,7 @@ The tokio runtime is intentionally capped at 4 workers (see `lib.rs` → `tauri:
 
 Profiles live in the persisted config (one `ConfigProfile` per entry, with a shared `activeProfile` pointer). Each profile carries three templates (video / audio / subtitle) and three auto-select flags. The `Default` profile auto-selects subtitle tracks.
 
-Templates are expanded by `extract-utils.ts::renderTemplate`, a **single-pass character scanner** (not regex-based — don't regress this). It supports `{file_name}`, `{track_id}`, `{track_number}`, `{language}`, `{codec_name}`, `{track_name}`. `{{` / `}}` escape to literal braces; unknown tokens are emitted verbatim so typos are visible. `{codec_name}` and `{track_name}` are sanitized for filesystem-unsafe characters before substitution.
+Templates are expanded by `extract-utils.ts::renderTemplate`, a **single-pass character scanner** (not regex-based — don't regress this). It supports `{file_name}`, `{track_id}`, `{track_number}`, `{language}`, `{codec_name}`, `{track_name}`. `{{` / `}}` escape to literal braces; unknown placeholders are emitted verbatim so typos are visible. `{codec_name}` and `{track_name}` are sanitized for filesystem-unsafe characters before substitution.
 
 The active profile is consumed both on track auto-select (once per card, guarded by `autoSelectedRef`) and at extract time (passed into `buildExtractArgs` / `buildCommandString`).
 

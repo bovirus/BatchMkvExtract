@@ -52,6 +52,7 @@ import { useTranslation } from "react-i18next";
 import {
   buildCommandString,
   buildExtractArgs,
+  formatHMS,
   getFileName,
   getParentDir,
   shouldSelectTrackType,
@@ -59,6 +60,7 @@ import {
 import { QueueItemStatus } from "../protocol";
 import { cancelExtract, enqueueExtract } from "../service";
 import { useMkvStore } from "../store";
+import { FileStatusIcon } from "./FileStatusIcon";
 
 interface GroupCardProps {
   files: string[];
@@ -106,22 +108,6 @@ function TrackTypeIcon({ type }: { type: string }) {
   }
 }
 
-function statusColor(status: QueueItemStatus | undefined): string {
-  switch (status) {
-    case QueueItemStatus.Extracting:
-      return "success.main";
-    case QueueItemStatus.Completed:
-      return "text.secondary";
-    case QueueItemStatus.Cancelled:
-    case QueueItemStatus.Failed:
-      return "error.main";
-    case QueueItemStatus.Waiting:
-      return "text.primary";
-    default:
-      return "text.secondary";
-  }
-}
-
 export function GroupCard({ files }: GroupCardProps) {
   const { t } = useTranslation();
   const [snackbar, setSnackbar] = useState<{
@@ -129,7 +115,13 @@ export function GroupCard({ files }: GroupCardProps) {
     severity: "success" | "error";
   } | null>(null);
   const [leftWidth, setLeftWidth] = useState(240);
+  const [now, setNow] = useState(() => Date.now());
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 200);
+    return () => clearInterval(id);
+  }, []);
 
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -419,9 +411,17 @@ export function GroupCard({ files }: GroupCardProps) {
               const entry = queueItems[file];
               const isExtracting = entry?.status === QueueItemStatus.Extracting;
               const isWaiting = entry?.status === QueueItemStatus.Waiting;
-              const statusText = entry
-                ? t(`queue.status.${entry.status.toLowerCase()}`)
-                : "";
+              const startedAt = entry?.extractionStartedAt ?? null;
+              const elapsedMs =
+                isExtracting && startedAt !== null ? now - startedAt : 0;
+              const progressPct = entry?.progress ?? 0;
+              const elapsedStr = isExtracting
+                ? formatHMS(elapsedMs)
+                : "--:--:--";
+              const etaStr =
+                isExtracting && progressPct > 0 && progressPct < 100
+                  ? formatHMS((elapsedMs * (100 - progressPct)) / progressPct)
+                  : "--:--:--";
               return (
                 <ListItem
                   key={file}
@@ -432,71 +432,87 @@ export function GroupCard({ files }: GroupCardProps) {
                     gap: 0.5,
                   }}
                 >
-                  <Typography
-                    variant="body2"
-                    sx={{ wordBreak: "break-all", width: "100%" }}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      width: "100%",
+                    }}
                   >
-                    {getFileName(file)}
-                  </Typography>
-                  {isExtracting ? (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                        width: "100%",
-                      }}
+                    <FileStatusIcon status={entry?.status} />
+                    <Typography
+                      variant="body2"
+                      sx={{ wordBreak: "break-all", flex: 1 }}
                     >
-                      <LinearProgress
-                        variant="determinate"
-                        value={entry?.progress ?? 0}
+                      {getFileName(file)}
+                    </Typography>
+                  </Box>
+                  {isExtracting ? (
+                    <>
+                      <Box
                         sx={{
-                          flex: 1,
-                          height: 6,
-                          borderRadius: 1,
-                          bgcolor: "action.hover",
-                          "& .MuiLinearProgress-bar": {
-                            bgcolor: "success.main",
-                          },
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          width: "100%",
                         }}
-                      />
+                      >
+                        <LinearProgress
+                          variant="determinate"
+                          value={entry?.progress ?? 0}
+                          sx={{
+                            flex: 1,
+                            height: 6,
+                            borderRadius: 1,
+                            bgcolor: "action.hover",
+                            "& .MuiLinearProgress-bar": {
+                              bgcolor: "success.main",
+                            },
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontFamily:
+                              "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+                            color: "text.secondary",
+                            minWidth: 34,
+                            textAlign: "right",
+                          }}
+                        >
+                          {entry?.progress ?? 0}%
+                        </Typography>
+                        <Tooltip title={t("extract.cancel")}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleCancel(file)}
+                          >
+                            <CancelIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                       <Typography
                         variant="caption"
                         sx={{
                           fontFamily:
                             "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
                           color: "text.secondary",
-                          minWidth: 34,
-                          textAlign: "right",
+                          width: "100%",
                         }}
                       >
-                        {entry?.progress ?? 0}%
+                        {elapsedStr} / {etaStr}
                       </Typography>
-                      <Tooltip title={t("extract.cancel")}>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleCancel(file)}
-                        >
-                          <CancelIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+                    </>
                   ) : isWaiting ? (
                     <Box
                       sx={{
                         display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
+                        justifyContent: "flex-end",
                         width: "100%",
                       }}
                     >
-                      <Typography
-                        variant="caption"
-                        sx={{ flex: 1, color: "text.secondary" }}
-                      >
-                        {statusText}
-                      </Typography>
                       <Tooltip title={t("extract.cancel")}>
                         <IconButton
                           size="small"
@@ -507,13 +523,6 @@ export function GroupCard({ files }: GroupCardProps) {
                         </IconButton>
                       </Tooltip>
                     </Box>
-                  ) : entry ? (
-                    <Typography
-                      variant="caption"
-                      sx={{ color: statusColor(entry.status) }}
-                    >
-                      {statusText}
-                    </Typography>
                   ) : null}
                 </ListItem>
               );

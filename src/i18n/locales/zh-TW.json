@@ -90,7 +90,8 @@
     "audio": "音訊",
     "subtitles": "字幕",
     "autoSelectOnDrop": "加入檔案時自動選取",
-    "templateTokensHint": "變數: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
+    "defaultGroupMode": "預設分組模式",
+    "templatePlaceholdersHint": "佔位符: {file_name}, {track_id}, {track_number}, {language}, {codec_name}, {track_name}",
     "resetTemplates": "還原預設值"
   },
   "about": {

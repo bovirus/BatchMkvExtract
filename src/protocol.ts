@@ -89,6 +89,7 @@ export interface ConfigProfile {
   selectVideo: boolean;
   selectAudio: boolean;
   selectSubtitle: boolean;
+  defaultGroupMode: boolean;
 }
 
 export interface Config {
@@ -105,6 +106,7 @@ export const DEFAULT_PROFILE_NAME = "Default";
 export const DEFAULT_TEMPLATE = "{file_name}.{track_id}.{language}";
 
 export function createDefaultProfile(name = DEFAULT_PROFILE_NAME): ConfigProfile {
+  const isDefault = name === DEFAULT_PROFILE_NAME;
   return {
     name,
     videoTemplate: DEFAULT_TEMPLATE,
@@ -112,7 +114,8 @@ export function createDefaultProfile(name = DEFAULT_PROFILE_NAME): ConfigProfile
     subtitleTemplate: DEFAULT_TEMPLATE,
     selectVideo: false,
     selectAudio: false,
-    selectSubtitle: name === DEFAULT_PROFILE_NAME,
+    selectSubtitle: isDefault,
+    defaultGroupMode: isDefault,
   };
 }
 

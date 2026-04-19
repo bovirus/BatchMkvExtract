@@ -59,6 +59,7 @@ import {
 import { QueueItemStatus } from "../protocol";
 import { cancelExtract, enqueueExtract, getMkvTracks } from "../service";
 import { useMkvStore } from "../store";
+import { FileStatusIcon } from "./FileStatusIcon";
 
 interface MkvFileCardProps {
   path: string;
@@ -324,9 +325,12 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
 
 
   const titleContent = (
-    <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
-      {path}
-    </Typography>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+      <FileStatusIcon status={entry?.status} />
+      <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
+        {path}
+      </Typography>
+    </Box>
   );
 
   const actionContent = (
@@ -432,12 +436,7 @@ export function MkvFileCard({ path }: MkvFileCardProps) {
               </Typography>
             </>
           ) : (
-            <Typography
-              variant="caption"
-              sx={{ flex: 1, color: "text.secondary" }}
-            >
-              {t("queue.status.waiting")}
-            </Typography>
+            <Box sx={{ flex: 1 }} />
           )}
           <Tooltip title={t("extract.cancel")}>
             <IconButton size="small" color="error" onClick={handleCancel}>

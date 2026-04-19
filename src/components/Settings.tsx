@@ -26,6 +26,7 @@ import {
   Paper,
   Select,
   Stack,
+  Switch,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -396,12 +397,23 @@ export default function Settings() {
                   </Box>
                 ))}
               </Stack>
+              <SettingRow label={t("settings.defaultGroupMode")}>
+                <Switch
+                  size="small"
+                  checked={activeProfile.defaultGroupMode}
+                  onChange={(e) =>
+                    updateActiveProfile({
+                      defaultGroupMode: e.target.checked,
+                    })
+                  }
+                />
+              </SettingRow>
               <Typography
                 variant="caption"
                 color="text.secondary"
                 sx={{ display: "block", mt: 1 }}
               >
-                {t("settings.templateTokensHint")}
+                {t("settings.templatePlaceholdersHint")}
               </Typography>
               <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
                 <Button
