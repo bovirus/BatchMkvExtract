@@ -6,6 +6,8 @@
 
 BatchMkvExtract is a desktop GUI that drives [mkvextract](https://mkvtoolnix.download/doc/mkvextract.html) from [MKVToolNix](https://mkvtoolnix.download/) across many `.mkv` files at once, so you can pull tracks, chapters, and attachments out of a whole batch without hand-writing commands.
 
+![BatchMkvExtract screenshot](docs/screenshots/group_view_extracting.png)
+
 ## Features
 
 * Cross-platform: Windows, Linux, macOS (intel + arm64)
