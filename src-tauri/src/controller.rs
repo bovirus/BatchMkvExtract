@@ -235,6 +235,21 @@ fn common_better_media_info_dirs() -> Vec<PathBuf> {
     dirs
 }
 
+#[cfg(target_os = "macos")]
+fn find_macos_app_bundle(bin: &Path) -> Option<PathBuf> {
+    // The Mach-O binary lives at `<bundle>.app/Contents/MacOS/BetterMediaInfo`,
+    // so the `.app` ancestor is at most three levels up. Walk a bounded number
+    // of parents instead of looping unbounded.
+    let mut current = bin.parent()?;
+    for _ in 0..4 {
+        if current.extension().and_then(|s| s.to_str()) == Some("app") {
+            return Some(current.to_path_buf());
+        }
+        current = current.parent()?;
+    }
+    None
+}
+
 pub async fn launch_better_media_info(paths: Vec<String>) -> Result<()> {
     let cfg = config::get_config();
     let configured = cfg.external_tools.better_media_info_path.trim().to_owned();
@@ -248,8 +263,37 @@ pub async fn launch_better_media_info(paths: Vec<String>) -> Result<()> {
             exe.display()
         );
     }
+
+    // On macOS, going through `open` lets Launch Services activate the bundle
+    // cleanly — spawning the bundle's Mach-O binary directly causes a brief
+    // window flash because the child never goes through proper app activation.
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(app_bundle) = find_macos_app_bundle(&exe) {
+            let mut cmd = std::process::Command::new("/usr/bin/open");
+            cmd.arg("-a").arg(&app_bundle);
+            if !paths.is_empty() {
+                cmd.arg("--args").args(&paths);
+            }
+            cmd.stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null());
+            cmd.spawn()
+                .map_err(|e| anyhow::anyhow!("Failed to launch BetterMediaInfo via open: {}", e))?;
+            return Ok(());
+        }
+    }
+
     let mut cmd = std::process::Command::new(&exe);
-    cmd.args(&paths);
+    cmd.args(&paths)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null());
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
     cmd.spawn()
         .map_err(|e| anyhow::anyhow!("Failed to launch BetterMediaInfo: {}", e))?;
     Ok(())
