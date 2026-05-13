@@ -91,7 +91,7 @@
     "betterMediaInfoPath": "Percorso BetterMediaInfo",
     "browse": "Sfoglia",
     "detect": "Rileva",
-    "mkvToolNixFound": "mkvmerge e mkvextract trovato nel percorso MKVToolNix.",
+    "mkvToolNixFound": "mkvmerge e mkvextract trovati nel percorso MKVToolNix.",
     "mkvToolNixNotFound": "mkvmerge o mkvextract non trovati nel percorso MKVToolNix.",
     "betterMediaInfoFound": "BetterMediaInfo trovato",
     "betterMediaInfoNotFound": "BetterMediaInfo non è stato trovato. Verifica il relativo percorso e riprova.",
@@ -118,7 +118,7 @@
   },
   "about": {
     "title": "Info programma",
-    "tagline": "GUI Batch GUI per mkvextract",
+    "tagline": "GUI Batch per mkvextract",
     "author": "Autore",
     "github": "GitHub"
   },
