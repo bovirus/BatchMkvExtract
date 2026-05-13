@@ -57,7 +57,7 @@
   },
   "queue": {
     "defaultDrive": "Coda",
-    "cancelAll": "Cancella tutto",
+    "cancelAll": "Interrompi tutto",
     "resumeAll": "Riprendi tutto",
     "clearCompleted": "Cancellazione completata",
     "header": {
