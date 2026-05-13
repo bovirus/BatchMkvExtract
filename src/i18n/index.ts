@@ -34,7 +34,7 @@ i18n.use(initReactI18next).init({
     "es": { translation: es },
     "fr": { translation: fr },
     "fr": { translation: fr },
-    "jit: { translation: it },
+    "it": { translation: it },
     "zh-CN": { translation: zhCN },
     "zh-HK": { translation: zhHK },
     "zh-TW": { translation: zhTW },
